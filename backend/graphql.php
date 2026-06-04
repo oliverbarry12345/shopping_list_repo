@@ -52,7 +52,7 @@ $queryType = new ObjectType([
 ]);
 
 $schema = new Schema([
-    "query" => $queryType
+    "query" => $queryType 
 ]);
 
 $input = json_decode(

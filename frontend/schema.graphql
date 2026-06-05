@@ -1,0 +1,10 @@
+type item_name {
+  itemID: Int!
+  itemName: String!
+  bought: Boolean!
+  category: String!
+}
+
+type Query {
+  items: [item_name!]!
+}

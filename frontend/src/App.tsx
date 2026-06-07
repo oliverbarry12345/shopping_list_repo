@@ -74,8 +74,15 @@ export default function App() {
     `,
     {}
   );
-  
-  const [items, setItems] = useState<any[]>([]);
+//Added Item field as a minor fix / improvement
+  type Item = {
+    itemID: number;
+    itemName: string;
+    bought: boolean;
+    category: string;
+  };
+
+  const [items, setItems] = useState<Item[]>([]);
   const [newItemName, setNewItemName] = useState("");
   const [newCategory, setNewCategory] = useState("");
 
@@ -125,6 +132,11 @@ export default function App() {
       )
     );
   };
+
+  //after assigning bought/notbought, sortedItems allows sortingbased bought status. 
+  const sortedItems = [...items].sort((a, b) => {
+    return Number(a.bought) - Number(b.bought);
+  });
 
   //handleAddItem allows new items to be appended to the database.
   const handleAddItem = async () => {
@@ -221,7 +233,7 @@ export default function App() {
           <span>Actions</span>
         </ColumnHeader>
         
-        {items.map((item) => (
+        {sortedItems.map((item) => ( //now items are rendered in sorted order based on bought/notbought
           <ItemRow key={item.itemID}>
             <span>{item.itemName}</span>
 
@@ -237,7 +249,7 @@ export default function App() {
                   toggleBought(item.itemID, !item.bought)
                 }
               >
-                Toggle
+                {item.bought ? "Mark Not Bought" : "Mark Bought"}
               </button>
 
               <button

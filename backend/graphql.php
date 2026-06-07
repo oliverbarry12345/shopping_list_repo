@@ -1,6 +1,6 @@
 <?php
 
-//headers to allow requests from different origins, and to stop COORS errors.
+//headers to allow requests from different origins, and to stop CORS errors.
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
@@ -60,11 +60,11 @@ $queryType = new ObjectType([
 ]);
 
 
-//graphqL mutation to update the bought status of an item in the DB, and return the updated item information back to frontend.
+//graphqL mutations to toggle the bought status of an item, and to add a new item to the list.
 $mutationType = new ObjectType([
     "name" => "Mutation",
     "fields" => [
-        "toggleBought" => [
+        "toggleBought" => [ //togglebought allows the user to mark an item as bought or unbought, and updates the database accordingly.
             "type" => $itemType,
             "args" => [
                 "itemID" => Type::nonNull(Type::int()),
@@ -91,9 +91,39 @@ $mutationType = new ObjectType([
                 $result = $selectStmt->get_result();
                 return $result->fetch_assoc();
             }
+        ],
+
+        "addItem" => [ //addItem allows the user to add a new item to the shopping list, and updates the database accordingly.
+            "type" => $itemType,
+            "args" => [
+                "itemName" => Type::nonNull(Type::string()),
+                "category" => Type::nonNull(Type::string())
+            ],
+            "resolve" => function ($root, $args) use ($conn) {
+                $itemName = $args["itemName"];
+                $category = $args["category"];
+
+                $stmt = $conn->prepare(
+                    "INSERT INTO item_name (itemName, bought, category) VALUES (?, false, ?)"
+                );
+                $stmt->bind_param("ss", $itemName, $category);
+                if (!$stmt->execute()) {
+                    throw new Exception($stmt->error);
+                }
+
+                $itemID = $stmt->insert_id;
+
+                return [
+                    "itemID" => $itemID,
+                    "itemName" => $itemName,
+                    "bought" => false,
+                    "category" => $category
+                ];
+            }
         ]
     ]
 ]);
+
 
 //here executes the graphQL task, then returns the result as JSON to the frontend.
 $schema = new Schema([

@@ -19,6 +19,8 @@ export default function App() {
   );
   
   const [items, setItems] = useState<any[]>([]);
+  const [newItemName, setNewItemName] = useState("");
+  const [newCategory, setNewCategory] = useState("");
 
   useEffect(() => {
     setItems([...data.items]);
@@ -57,7 +59,7 @@ export default function App() {
       console.error(result.errors);
       return;
     }
-
+    
     const updatedItem = result.data.toggleBought;
     //setItems function updates the state of the items list with the updated item information received from the backend.
     setItems((currentItems) =>
@@ -67,13 +69,61 @@ export default function App() {
     );
   };
 
-  //here the list and togglebought button is rendered. 
+  //handleAddItem allows new items to be appended to the database.
+  const handleAddItem = async () => {
+    const itemName = newItemName;
+    const category = newCategory;
+
+    if (!itemName || !category) {
+      alert("Item name and category are required.");
+      return;
+    }
+
+    const response = await fetch("http://localhost/shopping_list/backend/graphql.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        query: `
+          mutation AddItem($itemName: String!, $category: String!) {
+            addItem(itemName: $itemName, category: $category) {
+              itemID
+              itemName
+              bought
+              category
+            }
+          }
+        `,
+        variables: {
+          itemName,
+          category
+        }
+      })
+    });
+    
+    const result = await response.json();
+    console.log("Add item result:", result);
+
+    if (result.errors) {
+      console.error(result.errors);
+      return;
+    }
+    
+    const newItem = result.data.addItem;
+    setItems((currentItems) => [...currentItems, newItem]);
+
+    setNewItemName("");
+    setNewCategory("");
+  }
+
+  //here the list, togglebought button and new item form is rendered. 
   return (
     <div className="App">
       <h1>Shopping List</h1>
       <ul>
         {items.map((item) => (
-          <li key={item.itemID}>
+          <li key={item.itemID}> 
             {item.itemName} - {item.bought ? "Bought" : "Not Bought"} - {item.category}
             <button onClick={() => toggleBought(item.itemID, !item.bought)}>
               Toggle Bought
@@ -81,6 +131,20 @@ export default function App() {
           </li>
         ))}
       </ul>
+      <input
+        type="text"
+        placeholder="New item name"
+        value={newItemName}
+        onChange={(e) => setNewItemName(e.target.value)}
+      />
+
+      <input
+        type="text"
+        placeholder="Category"
+        value={newCategory}
+        onChange={(e) => setNewCategory(e.target.value)}
+      />
+      <button onClick={handleAddItem}>Add Item</button>
     </div>
   )
 };

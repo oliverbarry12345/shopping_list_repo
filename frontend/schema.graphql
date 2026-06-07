@@ -11,4 +11,5 @@ type Query {
 
 type Mutation {
   toggleBought(itemID: Int!, bought: Boolean!): item_name!
+  addItem(itemName: String!, category: String!): item_name!
 }

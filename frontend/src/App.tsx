@@ -117,7 +117,39 @@ export default function App() {
     setNewCategory("");
   }
 
-  //here the list, togglebought button and new item form is rendered. 
+  //handleDeleteItem deletes an item from the list by sending a mutation request to the backend.
+  const handleDeleteItem = async (itemID: number) => {
+    const response = await fetch("http://localhost/shopping_list/backend/graphql.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        query: `
+          mutation DeleteItem($itemID: Int!) {
+            deleteItem(itemID: $itemID) 
+          }
+        `,
+        variables: {
+          itemID
+        }
+      })
+    });
+
+    const result = await response.json();
+    console.log("Delete item result:", result);
+
+    if (result.errors) {
+      console.error(result.errors);
+      return;
+    }
+
+    if (result.data.deleteItem) {
+      setItems(items.filter(item => item.itemID !== itemID));
+    }
+  };
+
+  //here the list, togglebought button, new item form and delete buttons are rendered. 
   return (
     <div className="App">
       <h1>Shopping List</h1>
@@ -127,6 +159,9 @@ export default function App() {
             {item.itemName} - {item.bought ? "Bought" : "Not Bought"} - {item.category}
             <button onClick={() => toggleBought(item.itemID, !item.bought)}>
               Toggle Bought
+            </button>
+            <button onClick={() => handleDeleteItem(item.itemID)}>
+              Delete
             </button>
           </li>
         ))}

@@ -120,7 +120,28 @@ $mutationType = new ObjectType([
                     "category" => $category
                 ];
             }
+        ],
+
+        "deleteItem" => [ //deleteItem allows the user to remove an item from the shopping list, and updates the database accordingly.
+            "type" => Type::boolean(),
+            "args" => [
+                "itemID" => Type::nonNull(Type::int())
+            ],
+            "resolve" => function ($root, $args) use ($conn) {
+                $itemID = $args["itemID"];
+
+                $stmt = $conn->prepare(
+                    "DELETE FROM item_name WHERE itemID = ?"
+                );
+                $stmt->bind_param("i", $itemID);
+                if (!$stmt->execute()) {
+                    throw new Exception($stmt->error);
+                }
+
+                return true;
+            }
         ]
+        
     ]
 ]);
 

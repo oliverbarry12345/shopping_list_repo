@@ -1,6 +1,63 @@
 import type { AppQuery } from "./__generated__/AppQuery.graphql";
 import { graphql, useLazyLoadQuery } from "react-relay";
 import { useEffect, useState } from "react";
+import styled from "styled-components";
+
+//Styled components are defined here:
+const Container = styled.div`
+  width: 700px;
+  margin: 40px auto;
+  border: 2px solid black;
+`;
+
+const Header = styled.header`
+  padding: 20px;
+  border-bottom: 2px solid black;
+
+  h1 {
+    margin: 0;
+    font-size: 30px;
+  }
+`;
+
+const MainSection = styled.main`
+  border-bottom: 2px solid black;
+  text-align: left;
+`;
+
+const ColumnHeader = styled.div`
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr 2fr;
+  gap: 16px;
+  padding: 12px;
+  font-weight: bold;
+  border-bottom: 2px solid black;
+  text-align: left;
+`;
+
+const ItemRow = styled.div`
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr 2fr;
+  gap: 16px;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+`;
+
+const AddSection = styled.section`
+  padding: 16px 32px;
+
+  input {
+    margin-right: 8px;
+  }
+`;
 
 /// useLazyLoadQuery used to fetch graphqlfrom the backend. 
 export default function App() {
@@ -151,35 +208,67 @@ export default function App() {
 
   //here the list, togglebought button, new item form and delete buttons are rendered. 
   return (
-    <div className="App">
-      <h1>Shopping List</h1>
-      <ul>
-        {items.map((item) => (
-          <li key={item.itemID}> 
-            {item.itemName} - {item.bought ? "Bought" : "Not Bought"} - {item.category}
-            <button onClick={() => toggleBought(item.itemID, !item.bought)}>
-              Toggle Bought
-            </button>
-            <button onClick={() => handleDeleteItem(item.itemID)}>
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
-      <input
-        type="text"
-        placeholder="New item name"
-        value={newItemName}
-        onChange={(e) => setNewItemName(e.target.value)}
-      />
+    <Container>
+      <Header>
+        <h1>Shopping List</h1>
+      </Header>
 
-      <input
-        type="text"
-        placeholder="Category"
-        value={newCategory}
-        onChange={(e) => setNewCategory(e.target.value)}
-      />
-      <button onClick={handleAddItem}>Add Item</button>
-    </div>
+      <MainSection>
+        <ColumnHeader>
+          <span>Item</span>
+          <span>Bought</span>
+          <span>Category</span>
+          <span>Actions</span>
+        </ColumnHeader>
+        
+        {items.map((item) => (
+          <ItemRow key={item.itemID}>
+            <span>{item.itemName}</span>
+
+            <span>
+              {item.bought ? "Yes" : "No"}
+            </span>
+
+            <span>{item.category}</span>
+
+            <ButtonGroup>
+              <button
+                onClick={() =>
+                  toggleBought(item.itemID, !item.bought)
+                }
+              >
+                Toggle
+              </button>
+
+              <button
+                onClick={() =>
+                  handleDeleteItem(item.itemID)
+                }
+              >
+                Delete
+              </button>
+            </ButtonGroup>
+          </ItemRow>
+        ))}
+      </MainSection>
+
+      <AddSection>
+        <h2>Add new item:</h2>
+
+        <input
+          value={newItemName}
+          onChange={(e) => setNewItemName(e.target.value)}
+          placeholder="Name"
+        />
+
+        <input
+          value={newCategory}
+          onChange={(e) => setNewCategory(e.target.value)}
+          placeholder="Category"
+        />
+
+        <button onClick={handleAddItem}>Add Item</button>
+      </AddSection>
+    </Container>
   )
 };

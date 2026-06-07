@@ -1,6 +1,6 @@
 <?php
 
-//Connects to the database
+//simply connects to the database
 
 $conn = new mysqli(
     "localhost",

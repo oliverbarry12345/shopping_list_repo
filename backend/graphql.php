@@ -1,5 +1,6 @@
 <?php
 
+//headers to allow requests from different origins, and to stop COORS errors.
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
@@ -21,7 +22,7 @@ use GraphQL\Type\Definition\ObjectType;
 //graphQL type for the shopping list items
 
 $itemType = new ObjectType([
-    "name" => "ShoppingListItem",
+    "name" => "item_name",
     "fields" => [
         "itemID" => Type::int(),
         "itemName" => Type::string(),
@@ -38,7 +39,7 @@ $queryType = new ObjectType([
         "items" => [
             "type" => Type::listOf($itemType),
             "resolve" => function () use ($conn) {
-                $result = $conn->query("SELECT * FROM item_name");//item_name caused a fun error!
+                $result = $conn->query("SELECT * FROM item_name");
 
                 if (!$result) {
                     throw new Exception(
@@ -58,22 +59,59 @@ $queryType = new ObjectType([
     ]
 ]);
 
-$schema = new Schema([
-    "query" => $queryType 
+
+//graphqL mutation to update the bought status of an item in the DB, and return the updated item information back to frontend.
+$mutationType = new ObjectType([
+    "name" => "Mutation",
+    "fields" => [
+        "toggleBought" => [
+            "type" => $itemType,
+            "args" => [
+                "itemID" => Type::nonNull(Type::int()),
+                "bought" => Type::nonNull(Type::boolean())
+            ],
+            "resolve" => function ($root, $args) use ($conn) {
+                $itemID = $args["itemID"];
+                $bought = $args["bought"] ? true : false;
+
+                $stmt = $conn->prepare(
+                    "UPDATE item_name SET bought = ? WHERE itemID = ?"
+                );
+                $stmt->bind_param("ii", $bought, $itemID);
+                if (!$stmt->execute()) {
+                    throw new Exception($stmt->error);
+                }
+
+                $selectStmt = $conn->prepare(
+                    "SELECT itemID, itemName, bought, category FROM item_name WHERE itemID = ?"
+                );
+                $selectStmt->bind_param("i", $itemID);
+                $selectStmt->execute();
+
+                $result = $selectStmt->get_result();
+                return $result->fetch_assoc();
+            }
+        ]
+    ]
 ]);
 
-$input = json_decode(
-    file_get_contents("php://input"),
-    true
-);
+//here executes the graphQL task, then returns the result as JSON to the frontend.
+$schema = new Schema([
+    "query" => $queryType,
+    "mutation" => $mutationType
+]);
+
+$input = json_decode(file_get_contents("php://input"), true);
 
 $query = $input["query"];
+$variables = $input["variables"] ?? null;
 
 $result = GraphQL::executeQuery(
     $schema,
-    $query
+    $query,
+    null,
+    null,
+    $variables
 );
 
-$output = $result->toArray(true);//the fix to my annoying error. (true)
 echo json_encode($result->toArray(true));
-

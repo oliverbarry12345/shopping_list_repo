@@ -8,3 +8,7 @@ type item_name {
 type Query {
   items: [item_name!]!
 }
+
+type Mutation {
+  toggleBought(itemID: Int!, bought: Boolean!): item_name!
+}

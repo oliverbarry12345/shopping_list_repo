@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "relay": "relay.config.json"
+    "relay": "relay-compiler"
   },
   "dependencies": {
     "react": "^19.2.6",

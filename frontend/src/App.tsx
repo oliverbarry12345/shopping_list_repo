@@ -65,19 +65,25 @@ const toggleBoughtMutation = graphql`
       itemID
       itemName
       bought
-      category
+      category {
+        categoryID
+        categoryName
+      }
     }
   }
 `;
 
 // Relay mutation here implements the addItem function through GraphQL. 
 const addItemMutation = graphql`
-  mutation AppAddItemMutation($itemName: String!, $category: String!) {
-    addItem(itemName: $itemName, category: $category) {
+  mutation AppAddItemMutation($itemName: String!, $categoryID: Int!) {
+    addItem(itemName: $itemName, categoryID: $categoryID) {
       itemID
       itemName
       bought
-      category
+      category {
+        categoryID
+        categoryName
+      }
     }
   }
 `;
@@ -88,23 +94,36 @@ const deleteItemMutation = graphql`
   }
 `;
 
+//Relay mutation for editing/updating items. 
 const updateItemMutation = graphql`
-  mutation AppUpdateItemMutation($itemID: Int!, $itemName: String!, $category: String!) {
-    updateItem(itemID: $itemID, itemName: $itemName, category: $category) {
+  mutation AppUpdateItemMutation(
+    $itemID: Int!
+    $itemName: String!
+    $categoryID: Int!
+  ) {
+    updateItem(itemID: $itemID, itemName: $itemName, categoryID: $categoryID) {
       itemID
       itemName
       bought
-      category
+      category {
+        categoryID
+        categoryName
+      }
     }
   }
 `;
 
-//Added Item field as a minor fix / improvement and then moved outside app().
+//Item and Category fields, reflecting change in DB schema. 
+type Category = {
+  categoryID: number;
+  categoryName: string;
+};
+
 type Item = {
   itemID: number;
   itemName: string;
   bought: boolean;
-  category: string;
+  category: Category;
 };
 
 /// useLazyLoadQuery used to fetch graphqlfrom the backend. 
@@ -116,7 +135,15 @@ export default function App() {
           itemID
           itemName
           bought
-          category
+          category {
+            categoryID
+            categoryName
+          }
+        }
+
+        categories {
+          categoryID
+          categoryName
         }
       }
     `,
@@ -127,11 +154,12 @@ export default function App() {
 
   const [items, setItems] = useState<Item[]>([]);
   const [newItemName, setNewItemName] = useState("");
-  const [newCategory, setNewCategory] = useState("");
-
+  //states defined for use when editing data. 
+  const [newCategoryID, setNewCategoryID] = useState("");
   const [editingItemID, setEditingItemID] = useState<number | null>(null);
+
   const [editItemName, setEditItemName] = useState("");
-  const [editCategory, setEditCategory] = useState("");
+  const [editCategoryID, setEditCategoryID] = useState("");
 
   useEffect(() => {
     setItems([...data.items]);
@@ -168,9 +196,9 @@ export default function App() {
   //handleAddItem now using commitMutation.
   const handleAddItem = () => {
     const itemName = newItemName.trim();
-    const category = newCategory.trim();
+    const categoryID = Number(newCategoryID);
 
-    if (!itemName || !category) {
+    if (!itemName || !categoryID) {
       alert("Item name and category are required.");
       return;
     }
@@ -179,7 +207,7 @@ export default function App() {
       mutation: addItemMutation,
       variables: {
         itemName,
-        category,
+        categoryID,
       },
       onCompleted: (response: any) => {
         const newItem: Item = response.addItem;
@@ -187,7 +215,7 @@ export default function App() {
         setItems((currentItems) => [...currentItems, newItem]);
 
         setNewItemName("");
-        setNewCategory("");
+        setNewCategoryID("");
       },
       onError: (error) => {
         console.error(error);
@@ -215,23 +243,25 @@ export default function App() {
     });
   };
 
+  //startEditing uses previously defined states to hold data in "limbo" while editing, so data is only overwritten when saved.
   const startEditing = (item: Item) => {
     setEditingItemID(item.itemID);
     setEditItemName(item.itemName);
-    setEditCategory(item.category);
+    setEditCategoryID(String(item.category.categoryID));
   };
 
   const cancelEditing = () => {
     setEditingItemID(null);
     setEditItemName("");
-    setEditCategory("");
+    setEditCategoryID("");
   };
 
+  //saveEditedItem commits changes made to the DB. 
   const saveEditedItem = (itemID: number) => {
     const itemName = editItemName.trim();
-    const category = editCategory.trim();
+    const categoryID = Number(editCategoryID);
 
-    if (!itemName || !category) {
+    if (!itemName || !categoryID) {
       alert("Item name and category are required.");
       return;
     }
@@ -241,7 +271,7 @@ export default function App() {
       variables: {
         itemID,
         itemName,
-        category,
+        categoryID,
       },
       onCompleted: (response: any) => {
         const updatedItem: Item = response.updateItem;
@@ -260,7 +290,7 @@ export default function App() {
     });
   };
 
-  //here the list, togglebought button, new item form and delete buttons are rendered. 
+  //here the main program is rendered. 
   return (
     <Container>
       <Header>
@@ -286,27 +316,34 @@ export default function App() {
 
                 <span>{item.bought ? "Yes" : "No"}</span>
 
-                <input
-                  value={editCategory}
-                  onChange={(e) => setEditCategory(e.target.value)}
-                />
+                <select
+                  value={editCategoryID}
+                  onChange={(e) => setEditCategoryID(e.target.value)}
+                >
+                  <option value="">Select category</option>
+                  {data.categories.map((category) => (
+                    <option key={category.categoryID} value={category.categoryID}>
+                      {category.categoryName}
+                    </option>
+                  ))}
+                </select>
 
                 <ButtonGroup>
                   <button onClick={() => saveEditedItem(item.itemID)}>Save</button>
                   <button onClick={cancelEditing}>Cancel</button>
                 </ButtonGroup>
               </>
-            ) : (
+            ) : ( // if/or statement for rendering if the item is currently being edited or not. 
               <>
                 <span>{item.itemName}</span>
 
                 <span>{item.bought ? "Yes" : "No"}</span>
 
-                <span>{item.category}</span>
+                <span>{item.category.categoryName}</span>
 
                 <ButtonGroup>
-                  <button onClick={() => toggleBought(item.itemID, !item.bought)}>
-                    {item.bought ? "Mark Not Bought" : "Mark Bought"}
+                  <button onClick={() => toggleBought(item.itemID, !item.bought)}>  
+                    {item.bought ? "Mark Not Bought" : "Mark Bought"} 
                   </button>
 
                   <button onClick={() => startEditing(item)}>Edit</button>
@@ -329,12 +366,18 @@ export default function App() {
           onChange={(e) => setNewItemName(e.target.value)}
           placeholder="Name"
         />
-
-        <input
-          value={newCategory}
-          onChange={(e) => setNewCategory(e.target.value)}
-          placeholder="Category"
-        />
+        
+        <select
+          value={newCategoryID}
+          onChange={(e) => setNewCategoryID(e.target.value)}
+        >
+          <option value="">Select category</option>
+          {data.categories.map((category) => (
+            <option key={category.categoryID} value={category.categoryID}>
+              {category.categoryName}
+            </option>
+          ))}
+        </select>
 
         <button onClick={handleAddItem}>Add Item</button>
       </AddSection>

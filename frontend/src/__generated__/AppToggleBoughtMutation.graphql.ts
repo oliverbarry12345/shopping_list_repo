@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<7001af71394751e7c09a3b724505fab6>>
+ * @generated SignedSource<<f8f01029ba3399614b7dc6e834fd45af>>
  * @lightSyntaxTransform
  */
 
@@ -15,7 +15,10 @@ export type AppToggleBoughtMutation$variables = {
 export type AppToggleBoughtMutation$data = {
   readonly toggleBought: {
     readonly bought: boolean;
-    readonly category: string;
+    readonly category: {
+      readonly categoryID: number;
+      readonly categoryName: string;
+    };
     readonly itemID: number;
     readonly itemName: string;
   };
@@ -80,8 +83,26 @@ v2 = [
       {
         "alias": null,
         "args": null,
-        "kind": "ScalarField",
+        "concreteType": "Category",
+        "kind": "LinkedField",
         "name": "category",
+        "plural": false,
+        "selections": [
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "categoryID",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "categoryName",
+            "storageKey": null
+          }
+        ],
         "storageKey": null
       }
     ],
@@ -112,16 +133,16 @@ return {
     "selections": (v2/*:: as any*/)
   },
   "params": {
-    "cacheID": "2e8b2f2fc845b6971554f00785520be6",
+    "cacheID": "9cb45115fe916a729dde1b997e08bed4",
     "id": null,
     "metadata": {},
     "name": "AppToggleBoughtMutation",
     "operationKind": "mutation",
-    "text": "mutation AppToggleBoughtMutation(\n  $itemID: Int!\n  $bought: Boolean!\n) {\n  toggleBought(itemID: $itemID, bought: $bought) {\n    itemID\n    itemName\n    bought\n    category\n  }\n}\n"
+    "text": "mutation AppToggleBoughtMutation(\n  $itemID: Int!\n  $bought: Boolean!\n) {\n  toggleBought(itemID: $itemID, bought: $bought) {\n    itemID\n    itemName\n    bought\n    category {\n      categoryID\n      categoryName\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "b68819e7c2ef59f389829988326421e2";
+(node as any).hash = "c1dc500bd2660278223f13597c581418";
 
 export default node;

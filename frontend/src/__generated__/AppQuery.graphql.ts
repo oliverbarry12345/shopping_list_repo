@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<32da411e9095385d35436676b6458734>>
+ * @generated SignedSource<<528083784b99c7dd99dfbd18af55b90d>>
  * @lightSyntaxTransform
  */
 
@@ -10,9 +10,16 @@
 import { ConcreteRequest } from 'relay-runtime';
 export type AppQuery$variables = Record<PropertyKey, never>;
 export type AppQuery$data = {
+  readonly categories: ReadonlyArray<{
+    readonly categoryID: number;
+    readonly categoryName: string;
+  }>;
   readonly items: ReadonlyArray<{
     readonly bought: boolean;
-    readonly category: string;
+    readonly category: {
+      readonly categoryID: number;
+      readonly categoryName: string;
+    };
     readonly itemID: number;
     readonly itemName: string;
   }>;
@@ -24,6 +31,22 @@ export type AppQuery = {
 
 const node: ConcreteRequest = (function(){
 var v0 = [
+  {
+    "alias": null,
+    "args": null,
+    "kind": "ScalarField",
+    "name": "categoryID",
+    "storageKey": null
+  },
+  {
+    "alias": null,
+    "args": null,
+    "kind": "ScalarField",
+    "name": "categoryName",
+    "storageKey": null
+  }
+],
+v1 = [
   {
     "alias": null,
     "args": null,
@@ -56,11 +79,24 @@ var v0 = [
       {
         "alias": null,
         "args": null,
-        "kind": "ScalarField",
+        "concreteType": "Category",
+        "kind": "LinkedField",
         "name": "category",
+        "plural": false,
+        "selections": (v0/*:: as any*/),
         "storageKey": null
       }
     ],
+    "storageKey": null
+  },
+  {
+    "alias": null,
+    "args": null,
+    "concreteType": "Category",
+    "kind": "LinkedField",
+    "name": "categories",
+    "plural": true,
+    "selections": (v0/*:: as any*/),
     "storageKey": null
   }
 ];
@@ -70,7 +106,7 @@ return {
     "kind": "Fragment",
     "metadata": null,
     "name": "AppQuery",
-    "selections": (v0/*:: as any*/),
+    "selections": (v1/*:: as any*/),
     "type": "Query",
     "abstractKey": null
   },
@@ -79,19 +115,19 @@ return {
     "argumentDefinitions": [],
     "kind": "Operation",
     "name": "AppQuery",
-    "selections": (v0/*:: as any*/)
+    "selections": (v1/*:: as any*/)
   },
   "params": {
-    "cacheID": "700eafbd4c5ea51093ee0373b415e14d",
+    "cacheID": "8de1c5a31a5fc3c5a442b6fca7cbb61e",
     "id": null,
     "metadata": {},
     "name": "AppQuery",
     "operationKind": "query",
-    "text": "query AppQuery {\n  items {\n    itemID\n    itemName\n    bought\n    category\n  }\n}\n"
+    "text": "query AppQuery {\n  items {\n    itemID\n    itemName\n    bought\n    category {\n      categoryID\n      categoryName\n    }\n  }\n  categories {\n    categoryID\n    categoryName\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "bcc48c3dd4fd6f22acc8763510692c29";
+(node as any).hash = "b44fe7a81b223763176a702573d9d1af";
 
 export default node;

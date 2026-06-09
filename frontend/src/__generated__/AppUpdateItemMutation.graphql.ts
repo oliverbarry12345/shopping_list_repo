@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<65a77680feac26b6bb0ef5704a9ad987>>
+ * @generated SignedSource<<d6e903479af26749e2835d383491f0d2>>
  * @lightSyntaxTransform
  */
 
@@ -9,14 +9,17 @@
 
 import { ConcreteRequest } from 'relay-runtime';
 export type AppUpdateItemMutation$variables = {
-  category: string;
+  categoryID: number;
   itemID: number;
   itemName: string;
 };
 export type AppUpdateItemMutation$data = {
   readonly updateItem: {
     readonly bought: boolean;
-    readonly category: string;
+    readonly category: {
+      readonly categoryID: number;
+      readonly categoryName: string;
+    };
     readonly itemID: number;
     readonly itemName: string;
   };
@@ -30,7 +33,7 @@ const node: ConcreteRequest = (function(){
 var v0 = {
   "defaultValue": null,
   "kind": "LocalArgument",
-  "name": "category"
+  "name": "categoryID"
 },
 v1 = {
   "defaultValue": null,
@@ -48,8 +51,8 @@ v3 = [
     "args": [
       {
         "kind": "Variable",
-        "name": "category",
-        "variableName": "category"
+        "name": "categoryID",
+        "variableName": "categoryID"
       },
       {
         "kind": "Variable",
@@ -91,8 +94,26 @@ v3 = [
       {
         "alias": null,
         "args": null,
-        "kind": "ScalarField",
+        "concreteType": "Category",
+        "kind": "LinkedField",
         "name": "category",
+        "plural": false,
+        "selections": [
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "categoryID",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "categoryName",
+            "storageKey": null
+          }
+        ],
         "storageKey": null
       }
     ],
@@ -125,16 +146,16 @@ return {
     "selections": (v3/*:: as any*/)
   },
   "params": {
-    "cacheID": "b6c319b47c2e1c5064aa2c8a6fef7d49",
+    "cacheID": "8a7883b8487b7e47e46dd2bd536a4704",
     "id": null,
     "metadata": {},
     "name": "AppUpdateItemMutation",
     "operationKind": "mutation",
-    "text": "mutation AppUpdateItemMutation(\n  $itemID: Int!\n  $itemName: String!\n  $category: String!\n) {\n  updateItem(itemID: $itemID, itemName: $itemName, category: $category) {\n    itemID\n    itemName\n    bought\n    category\n  }\n}\n"
+    "text": "mutation AppUpdateItemMutation(\n  $itemID: Int!\n  $itemName: String!\n  $categoryID: Int!\n) {\n  updateItem(itemID: $itemID, itemName: $itemName, categoryID: $categoryID) {\n    itemID\n    itemName\n    bought\n    category {\n      categoryID\n      categoryName\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "9a798261ab5e0a34c3dcda6a1cd00504";
+(node as any).hash = "53e126ab4621122f6280406981ff7257";
 
 export default node;

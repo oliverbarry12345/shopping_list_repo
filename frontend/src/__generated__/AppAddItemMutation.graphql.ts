@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<d1f1541ffb46ce67cf532e4ae54ae2b5>>
+ * @generated SignedSource<<fbfccd5f2bb16bfd824614e2e4eb75da>>
  * @lightSyntaxTransform
  */
 
@@ -9,13 +9,16 @@
 
 import { ConcreteRequest } from 'relay-runtime';
 export type AppAddItemMutation$variables = {
-  category: string;
+  categoryID: number;
   itemName: string;
 };
 export type AppAddItemMutation$data = {
   readonly addItem: {
     readonly bought: boolean;
-    readonly category: string;
+    readonly category: {
+      readonly categoryID: number;
+      readonly categoryName: string;
+    };
     readonly itemID: number;
     readonly itemName: string;
   };
@@ -29,7 +32,7 @@ const node: ConcreteRequest = (function(){
 var v0 = {
   "defaultValue": null,
   "kind": "LocalArgument",
-  "name": "category"
+  "name": "categoryID"
 },
 v1 = {
   "defaultValue": null,
@@ -42,8 +45,8 @@ v2 = [
     "args": [
       {
         "kind": "Variable",
-        "name": "category",
-        "variableName": "category"
+        "name": "categoryID",
+        "variableName": "categoryID"
       },
       {
         "kind": "Variable",
@@ -80,8 +83,26 @@ v2 = [
       {
         "alias": null,
         "args": null,
-        "kind": "ScalarField",
+        "concreteType": "Category",
+        "kind": "LinkedField",
         "name": "category",
+        "plural": false,
+        "selections": [
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "categoryID",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "categoryName",
+            "storageKey": null
+          }
+        ],
         "storageKey": null
       }
     ],
@@ -112,16 +133,16 @@ return {
     "selections": (v2/*:: as any*/)
   },
   "params": {
-    "cacheID": "b2bef4e1b4f06422901b97e5d93066d2",
+    "cacheID": "8c57ccde98a996ff44b6c94b2988501c",
     "id": null,
     "metadata": {},
     "name": "AppAddItemMutation",
     "operationKind": "mutation",
-    "text": "mutation AppAddItemMutation(\n  $itemName: String!\n  $category: String!\n) {\n  addItem(itemName: $itemName, category: $category) {\n    itemID\n    itemName\n    bought\n    category\n  }\n}\n"
+    "text": "mutation AppAddItemMutation(\n  $itemName: String!\n  $categoryID: Int!\n) {\n  addItem(itemName: $itemName, categoryID: $categoryID) {\n    itemID\n    itemName\n    bought\n    category {\n      categoryID\n      categoryName\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "3fef801c74262f8f31ed97eeeaa8bb92";
+(node as any).hash = "945f41da355f581b5f4a727d73a9e33c";
 
 export default node;

@@ -1,17 +1,23 @@
+type Category {
+  categoryID: Int!
+  categoryName: String!
+}
+
 type item_name {
   itemID: Int!
   itemName: String!
   bought: Boolean!
-  category: String!
+  category: Category!
 }
 
 type Query {
   items: [item_name!]!
+  categories: [Category!]!
 }
 
 type Mutation {
   toggleBought(itemID: Int!, bought: Boolean!): item_name!
-  addItem(itemName: String!, category: String!): item_name!
+  addItem(itemName: String!, categoryID: Int!): item_name!
   deleteItem(itemID: Int!): Boolean!
-  updateItem(itemID: Int!, itemName: String!, category: String!): item_name!
+  updateItem(itemID: Int!, itemName: String!, categoryID: Int!): item_name!
 }

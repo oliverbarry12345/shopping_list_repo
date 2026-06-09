@@ -21,39 +21,89 @@ use GraphQL\Type\Definition\ObjectType;
 
 //graphQL type for the shopping list items
 
+$categoryType = new ObjectType([
+    "name" => "Category",
+    "fields" => [
+        "categoryID" => Type::int(),
+        "categoryName" => Type::string()
+    ]
+]);
+
 $itemType = new ObjectType([
     "name" => "item_name",
     "fields" => [
         "itemID" => Type::int(),
         "itemName" => Type::string(),
         "bought" => Type::boolean(),
-        "category" => Type::string()
+        "category" => $categoryType
     ]
 ]);
 
 //graphQL query to retrieve all items from the DB
 
-$queryType = new ObjectType([
+$queryType = new ObjectType([ 
     "name" => "Query",
     "fields" => [
         "items" => [
             "type" => Type::listOf($itemType),
-            "resolve" => function () use ($conn) {
-                $result = $conn->query("SELECT * FROM item_name");
+            "resolve" => function () use ($conn) { // SQL to select all items, using LEFT JOIN to also select the categoryID.
+                $result = $conn->query("
+                    SELECT 
+                        item_name.itemID,
+                        item_name.itemName,
+                        item_name.bought,
+                        categories.categoryID,
+                        categories.categoryName
+                    FROM item_name
+                    LEFT JOIN categories 
+                        ON item_name.categoryID = categories.categoryID
+                ");
 
                 if (!$result) {
-                    throw new Exception(
-                        $conn->error
-                    );
+                    throw new Exception($conn->error);
                 }
 
                 $items = [];
 
                 while ($row = $result->fetch_assoc()) {
-                    $items[] = $row;
+                    $items[] = [
+                        "itemID" => $row["itemID"],
+                        "itemName" => $row["itemName"],
+                        "bought" => (bool)$row["bought"],
+                        "category" => [
+                            "categoryID" => $row["categoryID"],
+                            "categoryName" => $row["categoryName"]
+                        ]
+                    ];
                 }
 
                 return $items;
+            }
+        ],
+        
+        "categories" => [
+            "type" => Type::listOf($categoryType),
+            "resolve" => function () use ($conn) {
+                $result = $conn->query("
+                    SELECT categoryID, categoryName
+                    FROM categories
+                    ORDER BY categoryName
+                ");
+
+                if (!$result) {
+                    throw new Exception($conn->error);
+                }
+
+                $categories = [];
+
+                while ($row = $result->fetch_assoc()) {
+                    $categories[] = [
+                        "categoryID" => $row["categoryID"],
+                        "categoryName" => $row["categoryName"]
+                    ];
+                }
+
+                return $categories;
             }
         ]
     ]
@@ -81,15 +131,34 @@ $mutationType = new ObjectType([
                 if (!$stmt->execute()) {
                     throw new Exception($stmt->error);
                 }
-
-                $selectStmt = $conn->prepare(
-                    "SELECT itemID, itemName, bought, category FROM item_name WHERE itemID = ?"
-                );
+                    
+                $selectStmt = $conn->prepare("
+                    SELECT 
+                        item_name.itemID,
+                        item_name.itemName,
+                        item_name.bought,
+                        categories.categoryID,
+                        categories.categoryName
+                    FROM item_name
+                    LEFT JOIN categories
+                        ON item_name.categoryID = categories.categoryID
+                    WHERE item_name.itemID = ?
+                ");
                 $selectStmt->bind_param("i", $itemID);
                 $selectStmt->execute();
 
                 $result = $selectStmt->get_result();
-                return $result->fetch_assoc();
+                $row = $result->fetch_assoc();
+
+                return [
+                    "itemID" => $row["itemID"],
+                    "itemName" => $row["itemName"],
+                    "bought" => (bool)$row["bought"],
+                    "category" => [
+                        "categoryID" => $row["categoryID"],
+                        "categoryName" => $row["categoryName"]
+                    ]
+                ];
             }
         ],
 
@@ -97,27 +166,51 @@ $mutationType = new ObjectType([
             "type" => $itemType,
             "args" => [
                 "itemName" => Type::nonNull(Type::string()),
-                "category" => Type::nonNull(Type::string())
+                "categoryID" => Type::nonNull(Type::int())
             ],
             "resolve" => function ($root, $args) use ($conn) {
                 $itemName = $args["itemName"];
-                $category = $args["category"];
+                $categoryID = $args["categoryID"];
 
                 $stmt = $conn->prepare(
-                    "INSERT INTO item_name (itemName, bought, category) VALUES (?, false, ?)"
+                    "INSERT INTO item_name (itemName, bought, categoryID) VALUES (?, false, ?)"
                 );
-                $stmt->bind_param("ss", $itemName, $category);
+
+                $stmt->bind_param("si", $itemName, $categoryID);
+
                 if (!$stmt->execute()) {
                     throw new Exception($stmt->error);
                 }
 
                 $itemID = $stmt->insert_id;
 
+                $selectStmt = $conn->prepare("
+                    SELECT 
+                        item_name.itemID,
+                        item_name.itemName,
+                        item_name.bought,
+                        categories.categoryID,
+                        categories.categoryName
+                    FROM item_name
+                    LEFT JOIN categories
+                        ON item_name.categoryID = categories.categoryID
+                    WHERE item_name.itemID = ?
+                ");
+
+                $selectStmt->bind_param("i", $itemID);
+                $selectStmt->execute();
+
+                $result = $selectStmt->get_result();
+                $row = $result->fetch_assoc();
+
                 return [
-                    "itemID" => $itemID,
-                    "itemName" => $itemName,
-                    "bought" => false,
-                    "category" => $category
+                    "itemID" => $row["itemID"],
+                    "itemName" => $row["itemName"],
+                    "bought" => (bool)$row["bought"],
+                    "category" => [
+                        "categoryID" => $row["categoryID"],
+                        "categoryName" => $row["categoryName"]
+                    ]
                 ];
             }
         ],
@@ -142,41 +235,58 @@ $mutationType = new ObjectType([
             }
         ],
 
-        "updateItem" => [
+        "updateItem" => [ // updateItem allows existing items to be edited. 
             "type" => $itemType,
             "args" => [
                 "itemID" => Type::nonNull(Type::int()),
                 "itemName" => Type::nonNull(Type::string()),
-                "category" => Type::nonNull(Type::string())
+                "categoryID" => Type::nonNull(Type::int())
             ],
             "resolve" => function ($root, $args) use ($conn) {
                 $itemID = $args["itemID"];
                 $itemName = $args["itemName"];
-                $category = $args["category"];
+                $categoryID = $args["categoryID"];
 
                 $stmt = $conn->prepare(
-                    "UPDATE item_name SET itemName = ?, category = ? WHERE itemID = ?"
+                    "UPDATE item_name SET itemName = ?, categoryID = ? WHERE itemID = ?"
                 );
 
-                $stmt->bind_param("ssi", $itemName, $category, $itemID);
+                $stmt->bind_param("sii", $itemName, $categoryID, $itemID);
 
                 if (!$stmt->execute()) {
                     throw new Exception($stmt->error);
                 }
 
-                $selectStmt = $conn->prepare(
-                    "SELECT itemID, itemName, bought, category FROM item_name WHERE itemID = ?"
-                );
+                $selectStmt = $conn->prepare("
+                    SELECT 
+                        item_name.itemID,
+                        item_name.itemName,
+                        item_name.bought,
+                        categories.categoryID,
+                        categories.categoryName
+                    FROM item_name
+                    LEFT JOIN categories
+                        ON item_name.categoryID = categories.categoryID
+                    WHERE item_name.itemID = ?
+                ");
 
                 $selectStmt->bind_param("i", $itemID);
                 $selectStmt->execute();
 
                 $result = $selectStmt->get_result();
+                $row = $result->fetch_assoc();
 
-                return $result->fetch_assoc();
+                return [
+                    "itemID" => $row["itemID"],
+                    "itemName" => $row["itemName"],
+                    "bought" => (bool)$row["bought"],
+                    "category" => [
+                        "categoryID" => $row["categoryID"],
+                        "categoryName" => $row["categoryName"]
+                    ]
+                ];
             }
-        ]
-        
+        ],
     ]
 ]);
 

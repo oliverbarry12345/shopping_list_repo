@@ -140,6 +140,41 @@ $mutationType = new ObjectType([
 
                 return true;
             }
+        ],
+
+        "updateItem" => [
+            "type" => $itemType,
+            "args" => [
+                "itemID" => Type::nonNull(Type::int()),
+                "itemName" => Type::nonNull(Type::string()),
+                "category" => Type::nonNull(Type::string())
+            ],
+            "resolve" => function ($root, $args) use ($conn) {
+                $itemID = $args["itemID"];
+                $itemName = $args["itemName"];
+                $category = $args["category"];
+
+                $stmt = $conn->prepare(
+                    "UPDATE item_name SET itemName = ?, category = ? WHERE itemID = ?"
+                );
+
+                $stmt->bind_param("ssi", $itemName, $category, $itemID);
+
+                if (!$stmt->execute()) {
+                    throw new Exception($stmt->error);
+                }
+
+                $selectStmt = $conn->prepare(
+                    "SELECT itemID, itemName, bought, category FROM item_name WHERE itemID = ?"
+                );
+
+                $selectStmt->bind_param("i", $itemID);
+                $selectStmt->execute();
+
+                $result = $selectStmt->get_result();
+
+                return $result->fetch_assoc();
+            }
         ]
         
     ]

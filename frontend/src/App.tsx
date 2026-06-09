@@ -88,6 +88,17 @@ const deleteItemMutation = graphql`
   }
 `;
 
+const updateItemMutation = graphql`
+  mutation AppUpdateItemMutation($itemID: Int!, $itemName: String!, $category: String!) {
+    updateItem(itemID: $itemID, itemName: $itemName, category: $category) {
+      itemID
+      itemName
+      bought
+      category
+    }
+  }
+`;
+
 //Added Item field as a minor fix / improvement and then moved outside app().
 type Item = {
   itemID: number;
@@ -117,6 +128,10 @@ export default function App() {
   const [items, setItems] = useState<Item[]>([]);
   const [newItemName, setNewItemName] = useState("");
   const [newCategory, setNewCategory] = useState("");
+
+  const [editingItemID, setEditingItemID] = useState<number | null>(null);
+  const [editItemName, setEditItemName] = useState("");
+  const [editCategory, setEditCategory] = useState("");
 
   useEffect(() => {
     setItems([...data.items]);
@@ -200,6 +215,51 @@ export default function App() {
     });
   };
 
+  const startEditing = (item: Item) => {
+    setEditingItemID(item.itemID);
+    setEditItemName(item.itemName);
+    setEditCategory(item.category);
+  };
+
+  const cancelEditing = () => {
+    setEditingItemID(null);
+    setEditItemName("");
+    setEditCategory("");
+  };
+
+  const saveEditedItem = (itemID: number) => {
+    const itemName = editItemName.trim();
+    const category = editCategory.trim();
+
+    if (!itemName || !category) {
+      alert("Item name and category are required.");
+      return;
+    }
+
+    commitMutation(environment, {
+      mutation: updateItemMutation,
+      variables: {
+        itemID,
+        itemName,
+        category,
+      },
+      onCompleted: (response: any) => {
+        const updatedItem: Item = response.updateItem;
+
+        setItems((currentItems) =>
+          currentItems.map((item) =>
+            item.itemID === updatedItem.itemID ? updatedItem : item
+          )
+        );
+
+        cancelEditing();
+      },
+      onError: (error) => {
+        console.error(error);
+      },
+    });
+  };
+
   //here the list, togglebought button, new item form and delete buttons are rendered. 
   return (
     <Container>
@@ -217,31 +277,46 @@ export default function App() {
         
         {sortedItems.map((item) => ( //now items are rendered in sorted order based on bought/notbought
           <ItemRow key={item.itemID}>
-            <span>{item.itemName}</span>
+            {editingItemID === item.itemID ? (
+              <>
+                <input
+                  value={editItemName}
+                  onChange={(e) => setEditItemName(e.target.value)}
+                />
 
-            <span>
-              {item.bought ? "Yes" : "No"}
-            </span>
+                <span>{item.bought ? "Yes" : "No"}</span>
 
-            <span>{item.category}</span>
+                <input
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                />
 
-            <ButtonGroup>
-              <button
-                onClick={() =>
-                  toggleBought(item.itemID, !item.bought)
-                }
-              >
-                {item.bought ? "Mark Not Bought" : "Mark Bought"}
-              </button>
+                <ButtonGroup>
+                  <button onClick={() => saveEditedItem(item.itemID)}>Save</button>
+                  <button onClick={cancelEditing}>Cancel</button>
+                </ButtonGroup>
+              </>
+            ) : (
+              <>
+                <span>{item.itemName}</span>
 
-              <button
-                onClick={() =>
-                  handleDeleteItem(item.itemID)
-                }
-              >
-                Delete
-              </button>
-            </ButtonGroup>
+                <span>{item.bought ? "Yes" : "No"}</span>
+
+                <span>{item.category}</span>
+
+                <ButtonGroup>
+                  <button onClick={() => toggleBought(item.itemID, !item.bought)}>
+                    {item.bought ? "Mark Not Bought" : "Mark Bought"}
+                  </button>
+
+                  <button onClick={() => startEditing(item)}>Edit</button>
+
+                  <button onClick={() => handleDeleteItem(item.itemID)}>
+                    Delete
+                  </button>
+                </ButtonGroup>
+              </>
+            )}
           </ItemRow>
         ))}
       </MainSection>

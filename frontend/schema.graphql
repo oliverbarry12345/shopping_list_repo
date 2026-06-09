@@ -13,4 +13,5 @@ type Mutation {
   toggleBought(itemID: Int!, bought: Boolean!): item_name!
   addItem(itemName: String!, category: String!): item_name!
   deleteItem(itemID: Int!): Boolean!
+  updateItem(itemID: Int!, itemName: String!, category: String!): item_name!
 }

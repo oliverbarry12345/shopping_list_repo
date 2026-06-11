@@ -161,6 +161,8 @@ export default function App() {
   const [editItemName, setEditItemName] = useState("");
   const [editCategoryID, setEditCategoryID] = useState("");
 
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
   useEffect(() => {
     setItems([...data.items]);
   }, [data.items]);
@@ -188,8 +190,16 @@ export default function App() {
     });
   };
 
+  const filteredItems =
+  selectedCategory === "All"
+    ? items
+    : items.filter(
+        (item) =>
+          item.category.categoryName === selectedCategory
+      );
+
   //after assigning bought/notbought, sortedItems allows sortingbased bought status. 
-  const sortedItems = [...items].sort((a, b) => {
+  const sortedItems = [...filteredItems].sort((a, b) => {
     return Number(a.bought) - Number(b.bought);
   });
 
@@ -290,6 +300,7 @@ export default function App() {
     });
   };
 
+
   //here the main program is rendered. 
   return (
     <Container>
@@ -305,6 +316,22 @@ export default function App() {
           <span>Actions</span>
         </ColumnHeader>
         
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+        >
+          <option value="All">All Categories</option>
+
+          {data.categories.map((category) => (
+            <option
+              key={category.categoryID}
+              value={category.categoryName}
+            >
+              {category.categoryName}
+            </option>
+          ))}
+        </select>
+
         {sortedItems.map((item) => ( //now items are rendered in sorted order based on bought/notbought
           <ItemRow key={item.itemID}>
             {editingItemID === item.itemID ? (

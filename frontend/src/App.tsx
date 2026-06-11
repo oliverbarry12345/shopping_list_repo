@@ -162,6 +162,7 @@ export default function App() {
   const [editCategoryID, setEditCategoryID] = useState("");
 
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [searchText, setSearchText] = useState("");
 
   useEffect(() => {
     setItems([...data.items]);
@@ -190,13 +191,18 @@ export default function App() {
     });
   };
 
-  const filteredItems =
-  selectedCategory === "All"
-    ? items
-    : items.filter(
-        (item) =>
-          item.category.categoryName === selectedCategory
-      );
+  const filteredItems = items.filter((item) => {
+    const matchesCategory =
+      selectedCategory === "All" ||
+      item.category.categoryName === selectedCategory;
+
+    const matchesSearch =
+      item.itemName
+        .toLowerCase()
+        .includes(searchText.toLowerCase());
+
+    return matchesCategory && matchesSearch;
+  });
 
   //after assigning bought/notbought, sortedItems allows sortingbased bought status. 
   const sortedItems = [...filteredItems].sort((a, b) => {
@@ -331,6 +337,13 @@ export default function App() {
             </option>
           ))}
         </select>
+
+        <input
+          type="text"
+          placeholder="Search items..."
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+        />
 
         {sortedItems.map((item) => ( //now items are rendered in sorted order based on bought/notbought
           <ItemRow key={item.itemID}>

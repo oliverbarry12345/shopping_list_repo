@@ -5,23 +5,29 @@ import styled from "styled-components";
 
 //Styled components are defined here:
 const Container = styled.div`
-  width: 700px;
+  width: 850px;
   margin: 40px auto;
-  border: 2px solid black;
+  border: 1px solid #d0d0d0;
+  border-top: 6px solid #00a6c8;
+  background: #ffffff;
+  font-family: Arial, sans-serif;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
 `;
 
 const Header = styled.header`
-  padding: 20px;
-  border-bottom: 2px solid black;
+  padding: 24px 32px;
+  border-bottom: 1px solid #d0d0d0;
+  background: #f7f7f7;
 
   h1 {
     margin: 0;
-    font-size: 30px;
+    font-size: 32px;
+    color: #333;
   }
 `;
 
 const MainSection = styled.main`
-  border-bottom: 2px solid black;
+  padding: 20px 24px;
   text-align: left;
 `;
 
@@ -29,10 +35,12 @@ const ColumnHeader = styled.div`
   display: grid;
   grid-template-columns: 2fr 1fr 2fr 2fr;
   gap: 16px;
-  padding: 12px;
+  padding: 10px 14px;
   font-weight: bold;
-  border-bottom: 2px solid black;
-  text-align: left;
+  color: #555;
+  background: #e9e4d8;
+  border-radius: 6px;
+  margin-bottom: 10px;
 `;
 
 const ItemRow = styled.div`
@@ -40,24 +48,60 @@ const ItemRow = styled.div`
   grid-template-columns: 2fr 1fr 2fr 2fr;
   gap: 16px;
   align-items: center;
-  padding: 12px;
-  border-bottom: 1px solid #ddd;
-  text-align: left;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  background: #ffffff;
+  border: 1px solid #d8d8d8;
+  border-left: 5px solid #49c48a;
+  border-radius: 6px;
+  color: #333;
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
   gap: 8px;
   justify-content: flex-start;
+
+  button {
+    padding: 5px 10px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    background: #f7f7f7;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: #e9e9e9;
+  }
 `;
 
 const AddSection = styled.section`
-  padding: 16px 32px;
+  padding: 20px 32px;
+  background: #f7f7f7;
+  border-top: 1px solid #d0d0d0;
 
-  input {
+  h2 {
+    margin-top: 0;
+    color: #333;
+  }
+
+  input,
+  select {
     margin-right: 8px;
+    padding: 6px 8px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+  }
+
+  button {
+    padding: 6px 12px;
+    border: 1px solid #888;
+    border-radius: 4px;
+    background: #ffffff;
+    cursor: pointer;
   }
 `;
+
 // Relay mutation here updates the bought status through GraphQL. 
 const toggleBoughtMutation = graphql`
   mutation AppToggleBoughtMutation($itemID: Int!, $bought: Boolean!) {

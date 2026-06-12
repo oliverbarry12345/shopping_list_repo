@@ -43,6 +43,33 @@ const ColumnHeader = styled.div`
   margin-bottom: 10px;
 `;
 
+const FilterSection = styled.div`
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+
+  select,
+  input {
+    padding: 8px 10px;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+  }
+
+  input {
+    width: 230px;
+  }
+
+  select:focus,
+  input:focus {
+    outline: none;
+    border-color: #00a6c8;
+    box-shadow: 0 0 0 2px rgba(0, 166, 200, 0.2);
+  }
+`;
+
 const ItemRow = styled.div`
   display: grid;
   grid-template-columns: 2fr 1fr 2fr 2fr;
@@ -57,22 +84,25 @@ const ItemRow = styled.div`
   color: #333;
 `;
 
+const ActionButton = styled.button`
+  padding: 8px 14px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.2s;
+
+  &:hover {
+    background: #e9f7fb;
+    border-color: #00a6c8;
+  }
+`;
+
 const ButtonGroup = styled.div`
   display: flex;
   gap: 8px;
   justify-content: flex-start;
-
-  button {
-    padding: 5px 10px;
-    border: 1px solid #aaa;
-    border-radius: 4px;
-    background: #f7f7f7;
-    cursor: pointer;
-  }
-
-  button:hover {
-    background: #e9e9e9;
-  }
 `;
 
 const AddSection = styled.section`
@@ -93,12 +123,11 @@ const AddSection = styled.section`
     border-radius: 4px;
   }
 
-  button {
-    padding: 6px 12px;
-    border: 1px solid #888;
-    border-radius: 4px;
-    background: #ffffff;
-    cursor: pointer;
+  input:focus,
+  select:focus {
+    outline: none;
+    border-color: #00a6c8;
+    box-shadow: 0 0 0 2px rgba(0, 166, 200, 0.2);
   }
 `;
 
@@ -154,6 +183,13 @@ const updateItemMutation = graphql`
         categoryName
       }
     }
+  }
+`;
+
+//relay mutation for clearing bought items
+const clearBoughtItemsMutation = graphql`
+  mutation AppClearBoughtItemsMutation {
+    clearBoughtItems
   }
 `;
 
@@ -350,6 +386,23 @@ export default function App() {
     });
   };
 
+  const clearBoughtItems = () => {
+    commitMutation(environment, {
+      mutation: clearBoughtItemsMutation,
+      variables: {},
+      onCompleted: (response: any) => {
+        if (response.clearBoughtItems) {
+          setItems((currentItems) =>
+            currentItems.filter((item) => !item.bought)
+          );
+        }
+      },
+      onError: (error) => {
+        console.error(error);
+      },
+    });
+  };
+
 
   //here the main program is rendered. 
   return (
@@ -366,28 +419,30 @@ export default function App() {
           <span>Actions</span>
         </ColumnHeader>
         
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-        >
-          <option value="All">All Categories</option>
+        <FilterSection>
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <option value="All">All Categories</option>
+            {data.categories.map((category) => (
+              <option key={category.categoryID} value={category.categoryName}>
+                {category.categoryName}
+              </option>
+            ))}
+          </select>
 
-          {data.categories.map((category) => (
-            <option
-              key={category.categoryID}
-              value={category.categoryName}
-            >
-              {category.categoryName}
-            </option>
-          ))}
-        </select>
+          <input
+            type="text"
+            placeholder="Search items..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
 
-        <input
-          type="text"
-          placeholder="Search items..."
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-        />
+          <ActionButton onClick={clearBoughtItems}>
+            Clear Bought Items
+          </ActionButton>
+        </FilterSection>
 
         {sortedItems.map((item) => ( //now items are rendered in sorted order based on bought/notbought
           <ItemRow key={item.itemID}>
@@ -413,8 +468,8 @@ export default function App() {
                 </select>
 
                 <ButtonGroup>
-                  <button onClick={() => saveEditedItem(item.itemID)}>Save</button>
-                  <button onClick={cancelEditing}>Cancel</button>
+                  <ActionButton onClick={() => saveEditedItem(item.itemID)}>Save</ActionButton>
+                  <ActionButton onClick={cancelEditing}>Cancel</ActionButton>
                 </ButtonGroup>
               </>
             ) : ( // if/or statement for rendering if the item is currently being edited or not. 
@@ -426,15 +481,15 @@ export default function App() {
                 <span>{item.category.categoryName}</span>
 
                 <ButtonGroup>
-                  <button onClick={() => toggleBought(item.itemID, !item.bought)}>  
+                  <ActionButton onClick={() => toggleBought(item.itemID, !item.bought)}>  
                     {item.bought ? "Mark Not Bought" : "Mark Bought"} 
-                  </button>
+                  </ActionButton>
 
-                  <button onClick={() => startEditing(item)}>Edit</button>
+                  <ActionButton onClick={() => startEditing(item)}>Edit</ActionButton>
 
-                  <button onClick={() => handleDeleteItem(item.itemID)}>
+                  <ActionButton onClick={() => handleDeleteItem(item.itemID)}>
                     Delete
-                  </button>
+                  </ActionButton>
                 </ButtonGroup>
               </>
             )}
@@ -463,7 +518,7 @@ export default function App() {
           ))}
         </select>
 
-        <button onClick={handleAddItem}>Add Item</button>
+        <ActionButton onClick={handleAddItem}>Add Item</ActionButton>
       </AddSection>
     </Container>
   )

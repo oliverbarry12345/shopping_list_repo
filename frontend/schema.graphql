@@ -20,4 +20,5 @@ type Mutation {
   addItem(itemName: String!, categoryID: Int!): item_name!
   deleteItem(itemID: Int!): Boolean!
   updateItem(itemID: Int!, itemName: String!, categoryID: Int!): item_name!
+  clearBoughtItems: Boolean!
 }

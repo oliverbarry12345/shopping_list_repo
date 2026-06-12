@@ -287,6 +287,21 @@ $mutationType = new ObjectType([
                 ];
             }
         ],
+
+        "clearBoughtItems" => [
+            "type" => Type::boolean(),
+            "resolve" => function () use ($conn) {
+                $stmt = $conn->prepare(
+                    "DELETE FROM item_name WHERE bought = true"
+                );
+
+                if (!$stmt->execute()) {
+                    throw new Exception($stmt->error);
+                }
+
+                return true;
+            }
+        ],
     ]
 ]);
 

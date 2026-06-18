@@ -15,10 +15,16 @@ type Query {
   categories: [Category!]!
 }
 
+input FileItemInput {
+  itemName: String!
+  categoryID: Int!
+}
+
 type Mutation {
   toggleBought(itemID: Int!, bought: Boolean!): item_name!
   addItem(itemName: String!, categoryID: Int!): item_name!
   deleteItem(itemID: Int!): Boolean!
   updateItem(itemID: Int!, itemName: String!, categoryID: Int!): item_name!
   clearBoughtItems: Boolean!
+  addItemsFromFile(items: [FileItemInput!]!): [item_name!]!
 }

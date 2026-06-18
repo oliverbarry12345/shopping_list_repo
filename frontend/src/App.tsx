@@ -70,6 +70,28 @@ const FilterSection = styled.div`
   }
 `;
 
+const StatsBar = styled.div`
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 10px 14px;
+
+  background: #f7f7f7;
+  border: 1px solid #d0d0d0;
+  border-left: 5px solid #00a6c8;
+  border-radius: 6px;
+
+  font-size: 15px;
+  font-weight: 500;
+  color: #444;
+
+  span {
+    font-weight: bold;
+    color: #333;
+  }
+`;
+
 const ItemRow = styled.div`
   display: grid;
   grid-template-columns: 2fr 1fr 2fr 2fr;
@@ -129,6 +151,18 @@ const AddSection = styled.section`
     border-color: #00a6c8;
     box-shadow: 0 0 0 2px rgba(0, 166, 200, 0.2);
   }
+`;
+
+const ImportSection = styled.section`
+  margin-top: 16px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  border-top: 1px solid #ddd;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
 `;
 
 // Relay mutation here updates the bought status through GraphQL. 
@@ -193,6 +227,21 @@ const clearBoughtItemsMutation = graphql`
   }
 `;
 
+//Relay mutation to send file input to GraphQl
+const addItemsFromFileMutation = graphql`
+  mutation AppAddItemsFromFileMutation($items: [FileItemInput!]!) {
+    addItemsFromFile(items: $items) {
+      itemID
+      itemName
+      bought
+      category {
+        categoryID
+        categoryName
+      }
+    }
+  }
+`;
+
 //Item and Category fields, reflecting change in DB schema. 
 type Category = {
   categoryID: number;
@@ -243,6 +292,14 @@ export default function App() {
 
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchText, setSearchText] = useState("");
+
+  const totalItems = items.length;
+  const boughtItems = items.filter(
+    (item) => item.bought
+  ).length;
+  const remainingItems = totalItems - boughtItems;
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     setItems([...data.items]);
@@ -402,7 +459,51 @@ export default function App() {
       },
     });
   };
+  //uploadTextFile reads the TXT file, formats the data and then sends it off using commitMutation. 
+  const uploadTextFile = () => {
+    if (!selectedFile) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+          const text = reader.result as string;
+          const lines = text
+              .split("\n")
+              .filter(line => line.trim() !== "");
+          const parsedItems = lines.map(line => {
+              const [itemName, categoryName] =
+                  line.split(",");
+              const category =
+                  data.categories.find(
+                      c =>
+                      c.categoryName.trim() ===
+                      categoryName.trim()
+                  );
 
+              return {
+                  itemName: itemName.trim(),
+                  categoryID: category?.categoryID
+              };
+          }).filter(
+              item => item.categoryID !== undefined
+          );
+
+          commitMutation(environment, {
+              mutation: addItemsFromFileMutation,
+              variables: {
+                  items: parsedItems
+              },
+              onCompleted: (response: any) => {
+                  setItems(currentItems => [
+                      ...currentItems,
+                      ...response.addItemsFromFile
+                  ]);
+              },
+              onError: error => {
+                  console.error(error);
+              }
+          });
+      };
+      reader.readAsText(selectedFile);
+  };
 
   //here the main program is rendered. 
   return (
@@ -443,6 +544,12 @@ export default function App() {
             Clear Bought Items
           </ActionButton>
         </FilterSection>
+
+        <StatsBar>
+          <span>Total: {totalItems}</span>
+          <span>Bought: {boughtItems}</span>
+          <span>Remaining: {remainingItems}</span>
+        </StatsBar>
 
         {sortedItems.map((item) => ( //now items are rendered in sorted order based on bought/notbought
           <ItemRow key={item.itemID}>
@@ -520,6 +627,21 @@ export default function App() {
 
         <ActionButton onClick={handleAddItem}>Add Item</ActionButton>
       </AddSection>
+      
+      <ImportSection>
+        <input
+            type="file"
+            accept=".txt"
+            onChange={(e) => {
+                if (e.target.files) {
+                    setSelectedFile(e.target.files[0]);
+                }
+            }}
+        />
+        <ActionButton onClick={uploadTextFile}>
+            Import TXT
+        </ActionButton>
+      </ImportSection>
     </Container>
   )
 };

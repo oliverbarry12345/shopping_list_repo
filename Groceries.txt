@@ -1,0 +1,7 @@
+Cake,Groceries
+Bread,Groceries
+Milk,Groceries
+Tea,Groceries
+Hammer,Tools
+Soap,Household
+Laptop,Electronics

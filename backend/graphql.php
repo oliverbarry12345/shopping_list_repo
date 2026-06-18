@@ -18,6 +18,7 @@ use GraphQL\GraphQL;
 use GraphQL\Type\Schema;
 use GraphQL\Type\Definition\Type;
 use GraphQL\Type\Definition\ObjectType;
+use GraphQL\Type\Definition\InputObjectType;
 
 //graphQL type for the shopping list items
 
@@ -106,6 +107,16 @@ $queryType = new ObjectType([
                 return $categories;
             }
         ]
+    ]
+]);
+
+
+//fileInputType
+$fileItemInputType = new InputObjectType([
+    "name" => "FileItemInput",
+    "fields" => [
+        "itemName" => Type::nonNull(Type::string()),
+        "categoryID" => Type::nonNull(Type::int())
     ]
 ]);
 
@@ -302,8 +313,79 @@ $mutationType = new ObjectType([
                 return true;
             }
         ],
+
+        "addItemsFromFile" => [
+            "type" => Type::listOf($itemType),
+            "args" => [
+                "items" => Type::nonNull(Type::listOf(Type::nonNull($fileItemInputType)))
+            ],
+            "resolve" => function ($root, $args) use ($conn) {
+                $insertStmt = $conn->prepare(
+                    "INSERT INTO item_name (itemName, bought, categoryID) VALUES (?, false, ?)"
+                );
+
+                if (!$insertStmt) {
+                    throw new Exception($conn->error);
+                }
+
+                $selectStmt = $conn->prepare("
+                    SELECT 
+                        item_name.itemID,
+                        item_name.itemName,
+                        item_name.bought,
+                        categories.categoryID,
+                        categories.categoryName
+                    FROM item_name
+                    LEFT JOIN categories
+                        ON item_name.categoryID = categories.categoryID
+                    WHERE item_name.itemID = ?
+                ");
+
+                if (!$selectStmt) {
+                    throw new Exception($conn->error);
+                }
+
+                $createdItems = [];
+
+                foreach ($args["items"] as $item) {
+                    $itemName = trim($item["itemName"]);
+                    $categoryID = $item["categoryID"];
+
+                    if ($itemName === "") {
+                        continue;
+                    }
+
+                    $insertStmt->bind_param("si", $itemName, $categoryID);
+
+                    if (!$insertStmt->execute()) {
+                        throw new Exception($insertStmt->error);
+                    }
+
+                    $itemID = $insertStmt->insert_id;
+
+                    $selectStmt->bind_param("i", $itemID);
+                    $selectStmt->execute();
+
+                    $result = $selectStmt->get_result();
+                    $row = $result->fetch_assoc();
+
+                    $createdItems[] = [
+                        "itemID" => $row["itemID"],
+                        "itemName" => $row["itemName"],
+                        "bought" => (bool)$row["bought"],
+                        "category" => [
+                            "categoryID" => $row["categoryID"],
+                            "categoryName" => $row["categoryName"]
+                        ]
+                    ];
+                }
+
+                return $createdItems;
+            }
+        ],
     ]
 ]);
+
 
 
 //here executes the graphQL task, then returns the result as JSON to the frontend.

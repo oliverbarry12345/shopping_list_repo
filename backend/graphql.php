@@ -1,5 +1,12 @@
 <?php
 
+require_once __DIR__ . '/vendor/autoload.php';
+
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
+require_once 'db.php';
+
 //headers to allow requests from different origins, and to stop CORS errors.
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -12,7 +19,6 @@ if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
 }
 
 require "vendor/autoload.php";
-require "db.php";
 
 use GraphQL\GraphQL;
 use GraphQL\Type\Schema;

@@ -1,281 +1,32 @@
 import type { AppQuery } from "./__generated__/AppQuery.graphql";
-import { graphql, useLazyLoadQuery, commitMutation, useRelayEnvironment } from "react-relay";
+import { useLazyLoadQuery, commitMutation, useRelayEnvironment } from "react-relay";
 import { useEffect, useState } from "react";
-import styled from "styled-components";
+import type { Item } from "./types/shoppingTypes.ts";
+import * as Styled from "./styles/styledComponents.ts";
 
-//Styled components are defined here:
-const Container = styled.div`
-  width: 850px;
-  margin: 40px auto;
-  border: 1px solid #d0d0d0;
-  border-top: 6px solid #00a6c8;
-  background: #ffffff;
-  font-family: Arial, sans-serif;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-`;
+//importing components
+import StatsBar from "./components/statsBar";
+import FilterSection from "./components/filterSection";
+import ShoppingItem from "./components/shoppingItem";
+import AddSection from "./components/addSection";
+import ImportSection from "./components/importSection";
 
-const Header = styled.header`
-  padding: 24px 32px;
-  border-bottom: 1px solid #d0d0d0;
-  background: #f7f7f7;
+//importing mutations
+import { toggleBoughtMutation } from "./graphql/mutations/toggleBoughtMutation";
+import { addItemMutation } from "./graphql/mutations/addItemMutation";
+import { deleteItemMutation } from "./graphql/mutations/deleteItemMutation";
+import { updateItemMutation } from "./graphql/mutations/updateItemMutation";
+import { clearBoughtItemsMutation } from "./graphql/mutations/clearBoughtItemsMutation";
+import { addItemsFromFileMutation } from "./graphql/mutations/addItemsFromFileMutation";
 
-  h1 {
-    margin: 0;
-    font-size: 32px;
-    color: #333;
-  }
-`;
+//importing the query 
+import { appQuery } from "./graphql/queries/appQuery";
 
-const MainSection = styled.main`
-  padding: 20px 24px;
-  text-align: left;
-`;
-
-const ColumnHeader = styled.div`
-  display: grid;
-  grid-template-columns: 2fr 1fr 2fr 2fr;
-  gap: 16px;
-  padding: 10px 14px;
-  font-weight: bold;
-  color: #555;
-  background: #e9e4d8;
-  border-radius: 6px;
-  margin-bottom: 10px;
-`;
-
-const FilterSection = styled.div`
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-  align-items: center;
-
-  select,
-  input {
-    padding: 8px 10px;
-    border: 1px solid #bbb;
-    border-radius: 6px;
-    font-size: 14px;
-    background: #fff;
-  }
-
-  input {
-    width: 230px;
-  }
-
-  select:focus,
-  input:focus {
-    outline: none;
-    border-color: #00a6c8;
-    box-shadow: 0 0 0 2px rgba(0, 166, 200, 0.2);
-  }
-`;
-
-const StatsBar = styled.div`
-  display: flex;
-  gap: 24px;
-  align-items: center;
-  margin-bottom: 18px;
-  padding: 10px 14px;
-
-  background: #f7f7f7;
-  border: 1px solid #d0d0d0;
-  border-left: 5px solid #00a6c8;
-  border-radius: 6px;
-
-  font-size: 15px;
-  font-weight: 500;
-  color: #444;
-
-  span {
-    font-weight: bold;
-    color: #333;
-  }
-`;
-
-const ItemRow = styled.div`
-  display: grid;
-  grid-template-columns: 2fr 1fr 2fr 2fr;
-  gap: 16px;
-  align-items: center;
-  padding: 12px 14px;
-  margin-bottom: 8px;
-  background: #ffffff;
-  border: 1px solid #d8d8d8;
-  border-left: 5px solid #49c48a;
-  border-radius: 6px;
-  color: #333;
-`;
-
-const ActionButton = styled.button`
-  padding: 8px 14px;
-  border: 1px solid #bbb;
-  border-radius: 6px;
-  background: white;
-  cursor: pointer;
-  font-size: 14px;
-  transition: 0.2s;
-
-  &:hover {
-    background: #e9f7fb;
-    border-color: #00a6c8;
-  }
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 8px;
-  justify-content: flex-start;
-`;
-
-const AddSection = styled.section`
-  padding: 20px 32px;
-  background: #f7f7f7;
-  border-top: 1px solid #d0d0d0;
-
-  h2 {
-    margin-top: 0;
-    color: #333;
-  }
-
-  input,
-  select {
-    margin-right: 8px;
-    padding: 6px 8px;
-    border: 1px solid #aaa;
-    border-radius: 4px;
-  }
-
-  input:focus,
-  select:focus {
-    outline: none;
-    border-color: #00a6c8;
-    box-shadow: 0 0 0 2px rgba(0, 166, 200, 0.2);
-  }
-`;
-
-const ImportSection = styled.section`
-  margin-top: 16px;
-  padding-top: 12px;
-  padding-bottom: 12px;
-  border-top: 1px solid #ddd;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 16px;
-`;
-
-// Relay mutation here updates the bought status through GraphQL. 
-const toggleBoughtMutation = graphql`
-  mutation AppToggleBoughtMutation($itemID: Int!, $bought: Boolean!) {
-    toggleBought(itemID: $itemID, bought: $bought) {
-      itemID
-      itemName
-      bought
-      category {
-        categoryID
-        categoryName
-      }
-    }
-  }
-`;
-
-// Relay mutation here implements the addItem function through GraphQL. 
-const addItemMutation = graphql`
-  mutation AppAddItemMutation($itemName: String!, $categoryID: Int!) {
-    addItem(itemName: $itemName, categoryID: $categoryID) {
-      itemID
-      itemName
-      bought
-      category {
-        categoryID
-        categoryName
-      }
-    }
-  }
-`;
-//Relay mutation for deleteItem. 
-const deleteItemMutation = graphql`
-  mutation AppDeleteItemMutation($itemID: Int!) {
-    deleteItem(itemID: $itemID)
-  }
-`;
-
-//Relay mutation for editing/updating items. 
-const updateItemMutation = graphql`
-  mutation AppUpdateItemMutation(
-    $itemID: Int!
-    $itemName: String!
-    $categoryID: Int!
-  ) {
-    updateItem(itemID: $itemID, itemName: $itemName, categoryID: $categoryID) {
-      itemID
-      itemName
-      bought
-      category {
-        categoryID
-        categoryName
-      }
-    }
-  }
-`;
-
-//relay mutation for clearing bought items
-const clearBoughtItemsMutation = graphql`
-  mutation AppClearBoughtItemsMutation {
-    clearBoughtItems
-  }
-`;
-
-//Relay mutation to send file input to GraphQl
-const addItemsFromFileMutation = graphql`
-  mutation AppAddItemsFromFileMutation($items: [FileItemInput!]!) {
-    addItemsFromFile(items: $items) {
-      itemID
-      itemName
-      bought
-      category {
-        categoryID
-        categoryName
-      }
-    }
-  }
-`;
-
-//Item and Category fields, reflecting change in DB schema. 
-type Category = {
-  categoryID: number;
-  categoryName: string;
-};
-
-type Item = {
-  itemID: number;
-  itemName: string;
-  bought: boolean;
-  category: Category;
-};
 
 /// useLazyLoadQuery used to fetch graphqlfrom the backend. 
 export default function App() {
   const data = useLazyLoadQuery<AppQuery>(
-    graphql`
-      query AppQuery {
-        items {
-          itemID
-          itemName
-          bought
-          category {
-            categoryID
-            categoryName
-          }
-        }
-
-        categories {
-          categoryID
-          categoryName
-        }
-      }
-    `,
+    appQuery,
     {}
   );
 
@@ -507,141 +258,66 @@ export default function App() {
 
   //here the main program is rendered. 
   return (
-    <Container>
-      <Header>
+    <Styled.Container>
+      <Styled.Header>
         <h1>Shopping List</h1>
-      </Header>
+      </Styled.Header>
 
-      <MainSection>
-        <ColumnHeader>
+      <Styled.MainSection>
+        <Styled.ColumnHeader>
           <span>Item</span>
           <span>Bought</span>
           <span>Category</span>
           <span>Actions</span>
-        </ColumnHeader>
+        </Styled.ColumnHeader>
         
-        <FilterSection>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            <option value="All">All Categories</option>
-            {data.categories.map((category) => (
-              <option key={category.categoryID} value={category.categoryName}>
-                {category.categoryName}
-              </option>
-            ))}
-          </select>
+        <FilterSection
+          categories={data.categories}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          searchText={searchText}
+          setSearchText={setSearchText}
+          clearBoughtItems={clearBoughtItems}
+        />
 
-          <input
-            type="text"
-            placeholder="Search items..."
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+        <StatsBar
+          totalItems={totalItems}
+          boughtItems={boughtItems}
+          remainingItems={remainingItems}
+        />
+
+        {sortedItems.map((item) => (
+          <ShoppingItem
+            key={item.itemID}
+            item={item}
+            categories={data.categories}
+            editingItemID={editingItemID}
+            editItemName={editItemName}
+            setEditItemName={setEditItemName}
+            editCategoryID={editCategoryID}
+            setEditCategoryID={setEditCategoryID}
+            startEditing={startEditing}
+            cancelEditing={cancelEditing}
+            saveEditedItem={saveEditedItem}
+            toggleBought={toggleBought}
+            handleDeleteItem={handleDeleteItem}
           />
-
-          <ActionButton onClick={clearBoughtItems}>
-            Clear Bought Items
-          </ActionButton>
-        </FilterSection>
-
-        <StatsBar>
-          <span>Total: {totalItems}</span>
-          <span>Bought: {boughtItems}</span>
-          <span>Remaining: {remainingItems}</span>
-        </StatsBar>
-
-        {sortedItems.map((item) => ( //now items are rendered in sorted order based on bought/notbought
-          <ItemRow key={item.itemID}>
-            {editingItemID === item.itemID ? (
-              <>
-                <input
-                  value={editItemName}
-                  onChange={(e) => setEditItemName(e.target.value)}
-                />
-
-                <span>{item.bought ? "Yes" : "No"}</span>
-
-                <select
-                  value={editCategoryID}
-                  onChange={(e) => setEditCategoryID(e.target.value)}
-                >
-                  <option value="">Select category</option>
-                  {data.categories.map((category) => (
-                    <option key={category.categoryID} value={category.categoryID}>
-                      {category.categoryName}
-                    </option>
-                  ))}
-                </select>
-
-                <ButtonGroup>
-                  <ActionButton onClick={() => saveEditedItem(item.itemID)}>Save</ActionButton>
-                  <ActionButton onClick={cancelEditing}>Cancel</ActionButton>
-                </ButtonGroup>
-              </>
-            ) : ( // if/or statement for rendering if the item is currently being edited or not. 
-              <>
-                <span>{item.itemName}</span>
-
-                <span>{item.bought ? "Yes" : "No"}</span>
-
-                <span>{item.category.categoryName}</span>
-
-                <ButtonGroup>
-                  <ActionButton onClick={() => toggleBought(item.itemID, !item.bought)}>  
-                    {item.bought ? "Mark Not Bought" : "Mark Bought"} 
-                  </ActionButton>
-
-                  <ActionButton onClick={() => startEditing(item)}>Edit</ActionButton>
-
-                  <ActionButton onClick={() => handleDeleteItem(item.itemID)}>
-                    Delete
-                  </ActionButton>
-                </ButtonGroup>
-              </>
-            )}
-          </ItemRow>
         ))}
-      </MainSection>
+      </Styled.MainSection>
 
-      <AddSection>
-        <h2>Add new item:</h2>
-
-        <input
-          value={newItemName}
-          onChange={(e) => setNewItemName(e.target.value)}
-          placeholder="Name"
-        />
-        
-        <select
-          value={newCategoryID}
-          onChange={(e) => setNewCategoryID(e.target.value)}
-        >
-          <option value="">Select category</option>
-          {data.categories.map((category) => (
-            <option key={category.categoryID} value={category.categoryID}>
-              {category.categoryName}
-            </option>
-          ))}
-        </select>
-
-        <ActionButton onClick={handleAddItem}>Add Item</ActionButton>
-      </AddSection>
+      <AddSection
+        categories={data.categories}
+        newItemName={newItemName}
+        setNewItemName={setNewItemName}
+        newCategoryID={newCategoryID}
+        setNewCategoryID={setNewCategoryID}
+        handleAddItem={handleAddItem}
+      />
       
-      <ImportSection>
-        <input
-            type="file"
-            accept=".txt"
-            onChange={(e) => {
-                if (e.target.files) {
-                    setSelectedFile(e.target.files[0]);
-                }
-            }}
-        />
-        <ActionButton onClick={uploadTextFile}>
-            Import TXT
-        </ActionButton>
-      </ImportSection>
-    </Container>
+      <ImportSection
+        setSelectedFile={setSelectedFile}
+        uploadTextFile={uploadTextFile}
+      />
+    </Styled.Container>
   )
 };

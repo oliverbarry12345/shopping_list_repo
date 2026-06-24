@@ -1,7 +1,5 @@
 <?php
 
-//simply connects to the database
-
 $conn = new mysqli(
     $_ENV["DB_HOST"],
     $_ENV["DB_USER"],

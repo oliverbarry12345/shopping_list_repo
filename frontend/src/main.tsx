@@ -7,7 +7,7 @@ import App from './App.tsx'
 import { RelayEnvironmentProvider } from "react-relay";
 import { Environment, Network } from "relay-runtime";
 
-const HTTP_ENDPOINT = "http://localhost/shopping_list/backend/graphql.php";
+const HTTP_ENDPOINT = "http://localhost/shopping_list/backend//graphql/graphql.php";
 // fetchGraphQL is the link to backend, sending graphql queries and mutations, and receiving responses.
 const fetchGraphQL: FetchFunction = async (request, variables) => {
   const resp = await fetch(HTTP_ENDPOINT, {

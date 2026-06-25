@@ -1,26 +1,32 @@
 import type { AppQuery } from "./__generated__/AppQuery.graphql";
-import { useLazyLoadQuery, commitMutation, useRelayEnvironment } from "react-relay";
+import { useLazyLoadQuery, useRelayEnvironment } from "react-relay";
 import { useEffect, useState } from "react";
 import type { Item } from "./types/shoppingTypes.ts";
+
+//importing the styled components
 import * as Styled from "./styles/styledComponents.ts";
 
 //importing components
 import StatsBar from "./components/statsBar";
 import FilterSection from "./components/filterSection";
-import ShoppingItem from "./components/shoppingItem";
+import ShoppingItem from "./components/shoppingItem"; 
 import AddSection from "./components/addSection";
 import ImportSection from "./components/importSection";
 
-//importing mutations
-import { toggleBoughtMutation } from "./graphql/mutations/toggleBoughtMutation";
-import { addItemMutation } from "./graphql/mutations/addItemMutation";
-import { deleteItemMutation } from "./graphql/mutations/deleteItemMutation";
-import { updateItemMutation } from "./graphql/mutations/updateItemMutation";
-import { clearBoughtItemsMutation } from "./graphql/mutations/clearBoughtItemsMutation";
-import { addItemsFromFileMutation } from "./graphql/mutations/addItemsFromFileMutation";
-
 //importing the query 
 import { appQuery } from "./graphql/queries/appQuery";
+
+//importing the list filters
+import { shoppingFilters } from "./hooks/shoppingFilters";
+
+//importing the handlers
+import { createDeleteItemHandler } from "./hooks/deleteItem";
+import { createToggleBoughtHandler } from "./hooks/toggleBought.ts";
+import { createClearBoughtItemsHandler } from "./hooks/clearBoughtItems";
+import { createAddItemHandler } from "./hooks/addItem";
+import { createUpdateItemHandler } from "./hooks/updateItem";
+import { createUploadTextFileHandler } from "./hooks/uploadTextFile";
+import { createEditItemHandlers } from "./hooks/editItem";
 
 
 /// useLazyLoadQuery used to fetch graphqlfrom the backend. 
@@ -44,217 +50,64 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchText, setSearchText] = useState("");
 
-  const totalItems = items.length;
-  const boughtItems = items.filter(
-    (item) => item.bought
-  ).length;
-  const remainingItems = totalItems - boughtItems;
-
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     setItems([...data.items]);
   }, [data.items]);
 
+  const {
+    totalItems,
+    boughtItems,
+    remainingItems,
+    sortedItems,
+  } = shoppingFilters(items, selectedCategory, searchText);
+
   //togglebought function now using commitMutation. 
-  const toggleBought = (itemID: number, bought: boolean) => {
-    commitMutation(environment, {
-      mutation: toggleBoughtMutation,
-      variables: {
-        itemID,
-        bought,
-      },
-      onCompleted: (response: any) => {
-        const updatedItem: Item = response.toggleBought;
-
-        setItems((currentItems) =>
-          currentItems.map((item) =>
-            item.itemID === updatedItem.itemID ? updatedItem : item
-          )
-        );
-      },
-      onError: (error) => {
-        console.error(error);
-      },
-    });
-  };
-
-  const filteredItems = items.filter((item) => {
-    const matchesCategory =
-      selectedCategory === "All" ||
-      item.category.categoryName === selectedCategory;
-
-    const matchesSearch =
-      item.itemName
-        .toLowerCase()
-        .includes(searchText.toLowerCase());
-
-    return matchesCategory && matchesSearch;
+  const toggleBought = createToggleBoughtHandler({
+      environment,
+      setItems,
   });
 
-  //after assigning bought/notbought, sortedItems allows sortingbased bought status. 
-  const sortedItems = [...filteredItems].sort((a, b) => {
-    return Number(a.bought) - Number(b.bought);
+  const clearBoughtItems = createClearBoughtItemsHandler({
+      environment,
+      setItems,
   });
 
-  //handleAddItem now using commitMutation.
-  const handleAddItem = () => {
-    const itemName = newItemName.trim();
-    const categoryID = Number(newCategoryID);
+  const handleAddItem = createAddItemHandler({
+    environment,
+    setItems,
+    newItemName,
+    setNewItemName,
+    newCategoryID,
+    setNewCategoryID,
+  });
 
-    if (!itemName || !categoryID) {
-      alert("Item name and category are required.");
-      return;
-    }
+  const handleDeleteItem = createDeleteItemHandler({
+    environment,
+    setItems,
+  });
 
-    commitMutation(environment, {
-      mutation: addItemMutation,
-      variables: {
-        itemName,
-        categoryID,
-      },
-      onCompleted: (response: any) => {
-        const newItem: Item = response.addItem;
+  const { startEditing, cancelEditing } = createEditItemHandlers({
+    setEditingItemID,
+    setEditItemName,
+    setEditCategoryID,
+  });
 
-        setItems((currentItems) => [...currentItems, newItem]);
+  const saveEditedItem = createUpdateItemHandler({
+    environment,
+    setItems,
+    editItemName,
+    editCategoryID,
+    cancelEditing,
+  });
 
-        setNewItemName("");
-        setNewCategoryID("");
-      },
-      onError: (error) => {
-        console.error(error);
-      },
-    });
-  };
-
-  //handleDeleteItem, now using commitMutation.
-  const handleDeleteItem = (itemID: number) => {
-    commitMutation(environment, {
-      mutation: deleteItemMutation,
-      variables: {
-        itemID,
-      },
-      onCompleted: (response: any) => {
-        if (response.deleteItem) {
-          setItems((currentItems) =>
-            currentItems.filter((item) => item.itemID !== itemID)
-          );
-        }
-      },
-      onError: (error) => {
-        console.error(error);
-      },
-    });
-  };
-
-  //startEditing uses previously defined states to hold data in "limbo" while editing, so data is only overwritten when saved.
-  const startEditing = (item: Item) => {
-    setEditingItemID(item.itemID);
-    setEditItemName(item.itemName);
-    setEditCategoryID(String(item.category.categoryID));
-  };
-
-  const cancelEditing = () => {
-    setEditingItemID(null);
-    setEditItemName("");
-    setEditCategoryID("");
-  };
-
-  //saveEditedItem commits changes made to the DB. 
-  const saveEditedItem = (itemID: number) => {
-    const itemName = editItemName.trim();
-    const categoryID = Number(editCategoryID);
-
-    if (!itemName || !categoryID) {
-      alert("Item name and category are required.");
-      return;
-    }
-
-    commitMutation(environment, {
-      mutation: updateItemMutation,
-      variables: {
-        itemID,
-        itemName,
-        categoryID,
-      },
-      onCompleted: (response: any) => {
-        const updatedItem: Item = response.updateItem;
-
-        setItems((currentItems) =>
-          currentItems.map((item) =>
-            item.itemID === updatedItem.itemID ? updatedItem : item
-          )
-        );
-
-        cancelEditing();
-      },
-      onError: (error) => {
-        console.error(error);
-      },
-    });
-  };
-
-  const clearBoughtItems = () => {
-    commitMutation(environment, {
-      mutation: clearBoughtItemsMutation,
-      variables: {},
-      onCompleted: (response: any) => {
-        if (response.clearBoughtItems) {
-          setItems((currentItems) =>
-            currentItems.filter((item) => !item.bought)
-          );
-        }
-      },
-      onError: (error) => {
-        console.error(error);
-      },
-    });
-  };
-  //uploadTextFile reads the TXT file, formats the data and then sends it off using commitMutation. 
-  const uploadTextFile = () => {
-    if (!selectedFile) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-          const text = reader.result as string;
-          const lines = text
-              .split("\n")
-              .filter(line => line.trim() !== "");
-          const parsedItems = lines.map(line => {
-              const [itemName, categoryName] =
-                  line.split(",");
-              const category =
-                  data.categories.find(
-                      c =>
-                      c.categoryName.trim() ===
-                      categoryName.trim()
-                  );
-
-              return {
-                  itemName: itemName.trim(),
-                  categoryID: category?.categoryID
-              };
-          }).filter(
-              item => item.categoryID !== undefined
-          );
-
-          commitMutation(environment, {
-              mutation: addItemsFromFileMutation,
-              variables: {
-                  items: parsedItems
-              },
-              onCompleted: (response: any) => {
-                  setItems(currentItems => [
-                      ...currentItems,
-                      ...response.addItemsFromFile
-                  ]);
-              },
-              onError: error => {
-                  console.error(error);
-              }
-          });
-      };
-      reader.readAsText(selectedFile);
-  };
+  const uploadTextFile = createUploadTextFileHandler({
+    environment,
+    setItems,
+    selectedFile,
+    categories: data.categories,
+  });
 
   //here the main program is rendered. 
   return (

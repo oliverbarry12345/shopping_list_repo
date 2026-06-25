@@ -1,24 +1,26 @@
-import { commitMutation } from "react-relay";
-import type { Environment } from "relay-runtime";
+import { useMutation } from "react-relay";
 import type { Item } from "../types/shoppingTypes";
 import { updateItemMutation } from "../graphql/mutations/updateItemMutation";
+import type { AppUpdateItemMutation } from "../graphql/mutations/__generated__/AppUpdateItemMutation.graphql";
 
 type UpdateItemArgs = {
-  environment: Environment;
   setItems: React.Dispatch<React.SetStateAction<Item[]>>;
   editItemName: string;
   editCategoryID: string;
   cancelEditing: () => void;
 };
 
-export function createUpdateItemHandler({
-  environment,
+export function useUpdateItem({
   setItems,
   editItemName,
   editCategoryID,
   cancelEditing,
 }: UpdateItemArgs) {
-  return function saveEditedItem(itemID: number) {
+
+  const [commitUpdateItem, isUpdateItemInFlight] =
+    useMutation<AppUpdateItemMutation>(updateItemMutation);
+
+  const saveEditedItem = (itemID: number) => {
     const itemName = editItemName.trim();
     const categoryID = Number(editCategoryID);
 
@@ -27,27 +29,35 @@ export function createUpdateItemHandler({
       return;
     }
 
-    commitMutation(environment, {
-      mutation: updateItemMutation,
+    commitUpdateItem({
       variables: {
         itemID,
         itemName,
         categoryID,
       },
-      onCompleted: (response: any) => {
+
+      onCompleted: (response: AppUpdateItemMutation["response"]) => {
         const updatedItem: Item = response.updateItem;
 
         setItems((currentItems) =>
           currentItems.map((item) =>
-            item.itemID === updatedItem.itemID ? updatedItem : item
+            item.itemID === updatedItem.itemID
+              ? updatedItem
+              : item
           )
         );
 
         cancelEditing();
       },
+
       onError: (error) => {
         console.error(error);
       },
     });
+  };
+
+  return {
+    saveEditedItem,
+    isUpdateItemInFlight,
   };
 }

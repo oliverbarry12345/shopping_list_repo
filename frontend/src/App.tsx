@@ -1,5 +1,5 @@
 import type { AppQuery } from "./__generated__/AppQuery.graphql";
-import { useLazyLoadQuery, useRelayEnvironment } from "react-relay";
+import { useLazyLoadQuery } from "react-relay";
 import { useEffect, useState } from "react";
 import type { Item } from "./types/shoppingTypes.ts";
 
@@ -20,12 +20,12 @@ import { appQuery } from "./graphql/queries/appQuery";
 import { shoppingFilters } from "./hooks/shoppingFilters";
 
 //importing the handlers
-import { createDeleteItemHandler } from "./hooks/deleteItem";
-import { createToggleBoughtHandler } from "./hooks/toggleBought.ts";
-import { createClearBoughtItemsHandler } from "./hooks/clearBoughtItems";
-import { createAddItemHandler } from "./hooks/addItem";
-import { createUpdateItemHandler } from "./hooks/updateItem";
-import { createUploadTextFileHandler } from "./hooks/uploadTextFile";
+import { useDeleteItem } from "./hooks/useDeleteItem";
+import { useToggleBought } from "./hooks/useToggleBought";
+import { useClearBoughtItems } from "./hooks/useClearBoughtItems";
+import { useAddItem } from "./hooks/useAddItem";
+import { useUpdateItem } from "./hooks/useUpdateItem";
+import { useUploadTextFile } from "./hooks/useUploadTextFile";
 import { createEditItemHandlers } from "./hooks/editItem";
 
 
@@ -35,8 +35,6 @@ export default function App() {
     appQuery,
     {}
   );
-
-  const environment = useRelayEnvironment();
 
   const [items, setItems] = useState<Item[]>([]);
   const [newItemName, setNewItemName] = useState("");
@@ -64,18 +62,15 @@ export default function App() {
   } = shoppingFilters(items, selectedCategory, searchText);
 
   //togglebought function now using commitMutation. 
-  const toggleBought = createToggleBoughtHandler({
-      environment,
-      setItems,
+  const { toggleBought } = useToggleBought({
+    setItems,
   });
 
-  const clearBoughtItems = createClearBoughtItemsHandler({
-      environment,
-      setItems,
+  const { clearBoughtItems } = useClearBoughtItems({
+    setItems,
   });
 
-  const handleAddItem = createAddItemHandler({
-    environment,
+  const { handleAddItem } = useAddItem({
     setItems,
     newItemName,
     setNewItemName,
@@ -83,8 +78,7 @@ export default function App() {
     setNewCategoryID,
   });
 
-  const handleDeleteItem = createDeleteItemHandler({
-    environment,
+  const { handleDeleteItem } = useDeleteItem({
     setItems,
   });
 
@@ -94,16 +88,14 @@ export default function App() {
     setEditCategoryID,
   });
 
-  const saveEditedItem = createUpdateItemHandler({
-    environment,
+  const { saveEditedItem } = useUpdateItem({
     setItems,
     editItemName,
     editCategoryID,
     cancelEditing,
   });
 
-  const uploadTextFile = createUploadTextFileHandler({
-    environment,
+  const { uploadTextFile } = useUploadTextFile({
     setItems,
     selectedFile,
     categories: data.categories,

@@ -1,22 +1,24 @@
-import { commitMutation } from "react-relay";
-import type { Environment } from "relay-runtime";
+import { useMutation } from "react-relay";
 import type { Item, Category } from "../types/shoppingTypes";
 import { addItemsFromFileMutation } from "../graphql/mutations/addItemsFromFileMutation";
+import type { AppAddItemsFromFileMutation } from "../graphql/mutations/__generated__/AppAddItemsFromFileMutation.graphql";
+
 
 type UploadTextFileArgs = {
-  environment: Environment;
   setItems: React.Dispatch<React.SetStateAction<Item[]>>;
   selectedFile: File | null;
   categories: readonly Category[];
 };
 
-export function createUploadTextFileHandler({
-  environment,
+export function useUploadTextFile({
   setItems,
   selectedFile,
   categories,
 }: UploadTextFileArgs) {
-  return function uploadTextFile() {
+  const [commitAddItemsFromFile, isUploadTextFileInFlight] =
+    useMutation<AppAddItemsFromFileMutation>(addItemsFromFileMutation);
+
+  const uploadTextFile = () => {
     if (!selectedFile) return;
 
     const reader = new FileReader();
@@ -37,24 +39,32 @@ export function createUploadTextFileHandler({
               category.categoryName.trim() === categoryName.trim()
           );
 
+          if (!category) {
+            return null;
+          }
+
           return {
             itemName: itemName.trim(),
             categoryID: category?.categoryID,
           };
         })
-        .filter((item) => item.categoryID !== undefined);
+        .filter(
+          (item): item is { itemName: string; categoryID: number } =>
+          item !== null
+        );
 
-      commitMutation(environment, {
-        mutation: addItemsFromFileMutation,
+      commitAddItemsFromFile({
         variables: {
           items: parsedItems,
         },
-        onCompleted: (response: any) => {
+
+        onCompleted: (response: AppAddItemsFromFileMutation["response"]) => {
           setItems((currentItems) => [
             ...currentItems,
             ...response.addItemsFromFile,
           ]);
         },
+
         onError: (error) => {
           console.error(error);
         },
@@ -62,5 +72,10 @@ export function createUploadTextFileHandler({
     };
 
     reader.readAsText(selectedFile);
+  };
+
+  return {
+    uploadTextFile,
+    isUploadTextFileInFlight,
   };
 }

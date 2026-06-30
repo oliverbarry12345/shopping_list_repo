@@ -1,7 +1,11 @@
-import type { Item } from "../types/shoppingTypes";
+import type { ShoppingList_query$data } from "../graphql/fragments/__generated__/ShoppingList_query.graphql";
+
+//This file calculates the statistics, filtering and sorting for the shopping list. 
+
+type Items = ShoppingList_query$data["items"];
 
 export function shoppingFilters(
-  items: Item[],
+  items: Items,
   selectedCategory: string,
   searchText: string
 ) {

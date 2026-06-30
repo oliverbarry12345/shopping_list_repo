@@ -15,6 +15,7 @@ export const updateItemMutation = graphql`
         categoryID
         categoryName
       }
+      ...ShoppingItem_item
     }
   }
 `;

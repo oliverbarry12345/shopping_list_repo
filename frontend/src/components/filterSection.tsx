@@ -1,8 +1,10 @@
+import { useFragment } from "react-relay";
 import * as Styled from "../styles/styledComponents";
-import type { Category } from "../types/shoppingTypes";
+import type { Category_category$key } from "../graphql/fragments/__generated__/Category_category.graphql";
+import { categoryFragment } from "../graphql/fragments/categoryFragment";
 
 type Props = {
-  categories: readonly Category[];
+  categories: Category_category$key;
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
   searchText: string;
@@ -18,6 +20,13 @@ export default function FilterSection({
   setSearchText,
   clearBoughtItems,
 }: Props) {
+
+  // Read the category list from its relay fragment
+  const categoryData = useFragment(
+    categoryFragment,
+    categories
+  );
+
   return (
     <Styled.FilterSection>
       <select
@@ -26,7 +35,7 @@ export default function FilterSection({
       >
         <option value="All">All Categories</option>
 
-        {categories.map((category) => (
+        {categoryData.map((category) => (
           <option key={category.categoryID} value={category.categoryName}>
             {category.categoryName}
           </option>

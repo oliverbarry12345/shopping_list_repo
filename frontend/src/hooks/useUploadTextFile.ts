@@ -1,17 +1,16 @@
 import { useMutation } from "react-relay";
-import type { Item, Category } from "../types/shoppingTypes";
 import { addItemsFromFileMutation } from "../graphql/mutations/addItemsFromFileMutation";
 import type { AppAddItemsFromFileMutation } from "../graphql/mutations/__generated__/AppAddItemsFromFileMutation.graphql";
-
+import type { AppQuery } from "../graphql/queries/__generated__/AppQuery.graphql";
 
 type UploadTextFileArgs = {
-  setItems: React.Dispatch<React.SetStateAction<Item[]>>;
+  refreshQuery: () => void;
   selectedFile: File | null;
-  categories: readonly Category[];
+  categories: AppQuery["response"]["categories"];
 };
 
 export function useUploadTextFile({
-  setItems,
+  refreshQuery,
   selectedFile,
   categories,
 }: UploadTextFileArgs) {
@@ -24,7 +23,12 @@ export function useUploadTextFile({
     const reader = new FileReader();
 
     reader.onload = () => {
-      const text = reader.result as string;
+      if (typeof reader.result !== "string") {
+        console.error("File could not be read as text")
+        return;
+      }
+
+      const text = reader.result;
 
       const lines = text
         .split("\n")
@@ -58,11 +62,8 @@ export function useUploadTextFile({
           items: parsedItems,
         },
 
-        onCompleted: (response: AppAddItemsFromFileMutation["response"]) => {
-          setItems((currentItems) => [
-            ...currentItems,
-            ...response.addItemsFromFile,
-          ]);
+        onCompleted: () => {
+          refreshQuery();
         },
 
         onError: (error) => {

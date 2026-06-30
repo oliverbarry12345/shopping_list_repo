@@ -1,10 +1,9 @@
 import { useMutation } from "react-relay";
-import type { Item } from "../types/shoppingTypes";
 import { addItemMutation } from "../graphql/mutations/addItemMutation";
 import type { AppAddItemMutation } from "../graphql/mutations/__generated__/AppAddItemMutation.graphql";
 
 type AddItemArgs = {
-  setItems: React.Dispatch<React.SetStateAction<Item[]>>;
+  refreshQuery: () => void;
   newItemName: string;
   setNewItemName: React.Dispatch<React.SetStateAction<string>>;
   newCategoryID: string;
@@ -12,7 +11,7 @@ type AddItemArgs = {
 };
 
 export function useAddItem({
-  setItems,
+  refreshQuery,
   newItemName,
   setNewItemName,
   newCategoryID,
@@ -36,16 +35,10 @@ export function useAddItem({
         categoryID,
       },
 
-      onCompleted: (response: AppAddItemMutation["response"]) => {
-        const newItem: Item = response.addItem;
-
-        setItems((currentItems) => [
-          ...currentItems,
-          newItem,
-        ]);
-
+      onCompleted: () => {
         setNewItemName("");
         setNewCategoryID("");
+        refreshQuery();
       },
 
       onError: (error) => {

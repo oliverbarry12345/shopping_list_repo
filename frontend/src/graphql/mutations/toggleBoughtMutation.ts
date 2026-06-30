@@ -11,6 +11,7 @@ export const toggleBoughtMutation = graphql`
         categoryID
         categoryName
       }
+      ...ShoppingItem_item
     }
   }
 `;

@@ -1,17 +1,16 @@
 import { useMutation } from "react-relay";
-import type { Item } from "../types/shoppingTypes";
 import { updateItemMutation } from "../graphql/mutations/updateItemMutation";
 import type { AppUpdateItemMutation } from "../graphql/mutations/__generated__/AppUpdateItemMutation.graphql";
 
 type UpdateItemArgs = {
-  setItems: React.Dispatch<React.SetStateAction<Item[]>>;
+  refreshQuery: () => void;
   editItemName: string;
   editCategoryID: string;
   cancelEditing: () => void;
 };
 
 export function useUpdateItem({
-  setItems,
+  refreshQuery,
   editItemName,
   editCategoryID,
   cancelEditing,
@@ -36,18 +35,9 @@ export function useUpdateItem({
         categoryID,
       },
 
-      onCompleted: (response: AppUpdateItemMutation["response"]) => {
-        const updatedItem: Item = response.updateItem;
-
-        setItems((currentItems) =>
-          currentItems.map((item) =>
-            item.itemID === updatedItem.itemID
-              ? updatedItem
-              : item
-          )
-        );
-
+      onCompleted: () => {
         cancelEditing();
+        refreshQuery();
       },
 
       onError: (error) => {

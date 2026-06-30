@@ -1,8 +1,10 @@
+import { useFragment } from "react-relay";
+import { categoryFragment } from "../graphql/fragments/categoryFragment";
+import type { Category_category$key } from "../graphql/fragments/__generated__/Category_category.graphql";
 import * as Styled from "../styles/styledComponents";
-import type { Category } from "../types/shoppingTypes";
 
 type Props = {
-  categories: readonly Category[];
+  categories: Category_category$key;
   newItemName: string;
   setNewItemName: (name: string) => void;
   newCategoryID: string;
@@ -18,6 +20,13 @@ export default function AddSection({
   setNewCategoryID,
   handleAddItem,
 }: Props) {
+
+  // reading the category fragment. 
+  const categoryData = useFragment(
+    categoryFragment,
+    categories
+  );
+
   return (
     <Styled.AddSection>
       <h2>Add new item:</h2>
@@ -33,7 +42,7 @@ export default function AddSection({
         onChange={(e) => setNewCategoryID(e.target.value)}
       >
         <option value="">Select category</option>
-        {categories.map((category) => (
+        {categoryData.map((category) => (
           <option key={category.categoryID} value={category.categoryID}>
             {category.categoryName}
           </option>

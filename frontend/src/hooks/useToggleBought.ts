@@ -1,13 +1,12 @@
 import { useMutation } from "react-relay";
-import type { Item } from "../types/shoppingTypes";
 import { toggleBoughtMutation } from "../graphql/mutations/toggleBoughtMutation";
 import type { AppToggleBoughtMutation } from "../graphql/mutations/__generated__/AppToggleBoughtMutation.graphql";
 
 type ToggleBoughtArgs = {
-  setItems: React.Dispatch<React.SetStateAction<Item[]>>;
+  refreshQuery: () => void;
 };
 
-export function useToggleBought({ setItems }: ToggleBoughtArgs) {
+export function useToggleBought({ refreshQuery }: ToggleBoughtArgs) {
   const [commitToggleBought, isToggleBoughtInFlight] =
     useMutation<AppToggleBoughtMutation>(toggleBoughtMutation);
 
@@ -17,15 +16,8 @@ export function useToggleBought({ setItems }: ToggleBoughtArgs) {
         itemID,
         bought,
       },
-      onCompleted: (
-        response: AppToggleBoughtMutation["response"]) => {
-        const updatedItem: Item = response.toggleBought;
-
-        setItems((currentItems) =>
-          currentItems.map((item) =>
-            item.itemID === updatedItem.itemID ? updatedItem : item
-          )
-        );
+      onCompleted: () => {
+        refreshQuery();
       },
       onError: (error) => {
         console.error(error);

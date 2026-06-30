@@ -2,19 +2,12 @@ import { graphql } from "react-relay";
 
 export const appQuery = graphql`
   query AppQuery {
-    items {
-      itemID
-      itemName
-      bought
-      category {
-        categoryID
-        categoryName
-      }
-    }
+    ...ShoppingList_query
 
     categories {
       categoryID
       categoryName
+      ...Category_category
     }
   }
 `;

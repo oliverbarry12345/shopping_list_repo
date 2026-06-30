@@ -1,16 +1,14 @@
 import { useMutation } from "react-relay";
-import type { Item } from "../types/shoppingTypes";
 import { deleteItemMutation } from "../graphql/mutations/deleteItemMutation";
 import type { AppDeleteItemMutation } from "../graphql/mutations/__generated__/AppDeleteItemMutation.graphql";
 
-
 type DeleteItemArgs = {
-  setItems: React.Dispatch<React.SetStateAction<Item[]>>;
+  refreshQuery: () => void;
 };
 
-export function useDeleteItem({ setItems }: DeleteItemArgs) {
+export function useDeleteItem({ refreshQuery }: DeleteItemArgs) {
   const [commitDeleteItem, isDeleteItemInFlight] =
-    useMutation<AppDeleteItemMutation>(deleteItemMutation)
+    useMutation<AppDeleteItemMutation>(deleteItemMutation);
 
   const handleDeleteItem = (itemID: number) => {
     commitDeleteItem({
@@ -20,9 +18,7 @@ export function useDeleteItem({ setItems }: DeleteItemArgs) {
 
       onCompleted: (response: AppDeleteItemMutation["response"]) => {
         if (response.deleteItem) {
-          setItems((currentItems) =>
-            currentItems.filter((item) => item.itemID !== itemID)
-          );
+          refreshQuery();
         }
       },
 

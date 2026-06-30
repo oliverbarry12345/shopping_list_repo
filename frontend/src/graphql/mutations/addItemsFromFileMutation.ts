@@ -11,6 +11,7 @@ export const addItemsFromFileMutation = graphql`
         categoryID
         categoryName
       }
+      ...ShoppingItem_item
     }
   }
 `;

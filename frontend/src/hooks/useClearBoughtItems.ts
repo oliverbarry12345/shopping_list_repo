@@ -1,14 +1,13 @@
 import { useMutation } from "react-relay";
-import type { Item } from "../types/shoppingTypes";
 import { clearBoughtItemsMutation } from "../graphql/mutations/clearBoughtItemsMutation";
 import type { AppClearBoughtItemsMutation } from "../graphql/mutations/__generated__/AppClearBoughtItemsMutation.graphql";
 
 type ClearBoughtItemsArgs = {
-  setItems: React.Dispatch<React.SetStateAction<Item[]>>;
+  refreshQuery: () => void;
 };
 
 export function useClearBoughtItems({
-  setItems,
+  refreshQuery,
 }: ClearBoughtItemsArgs) {
 
   const [
@@ -20,13 +19,8 @@ export function useClearBoughtItems({
     commitClearBoughtItems({
       variables: {},
 
-      onCompleted: (
-        response: AppClearBoughtItemsMutation["response"]) => {
-        if (response.clearBoughtItems) {
-          setItems((currentItems) =>
-            currentItems.filter((item) => !item.bought)
-          );
-        }
+      onCompleted: () => {
+        refreshQuery();
       },
 
       onError: (error) => {

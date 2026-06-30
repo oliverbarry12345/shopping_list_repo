@@ -1,25 +1,20 @@
-import type { AppQuery } from "./__generated__/AppQuery.graphql";
+import type { AppQuery } from "./graphql/queries/__generated__/AppQuery.graphql";
 import { useLazyLoadQuery } from "react-relay";
-import { useEffect, useState } from "react";
-import type { Item } from "./types/shoppingTypes.ts";
+import { useState } from "react";
 
-//importing the styled components
+//importing styledComponents
 import * as Styled from "./styles/styledComponents.ts";
 
-//importing components
-import StatsBar from "./components/statsBar";
+//importing the components
 import FilterSection from "./components/filterSection";
-import ShoppingItem from "./components/shoppingItem"; 
 import AddSection from "./components/addSection";
 import ImportSection from "./components/importSection";
+import ShoppingList from "./components/shoppingList";
 
-//importing the query 
+//imoorting the queries
 import { appQuery } from "./graphql/queries/appQuery";
 
-//importing the list filters
-import { shoppingFilters } from "./hooks/shoppingFilters";
-
-//importing the handlers
+//importing the hooks
 import { useDeleteItem } from "./hooks/useDeleteItem";
 import { useToggleBought } from "./hooks/useToggleBought";
 import { useClearBoughtItems } from "./hooks/useClearBoughtItems";
@@ -28,59 +23,49 @@ import { useUpdateItem } from "./hooks/useUpdateItem";
 import { useUploadTextFile } from "./hooks/useUploadTextFile";
 import { createEditItemHandlers } from "./hooks/editItem";
 
-
-/// useLazyLoadQuery used to fetch graphqlfrom the backend. 
+//App's main jobs are making calls to the backend and rendering the 
 export default function App() {
+  const [refreshKey, setRefreshKey] = useState(0);
+
   const data = useLazyLoadQuery<AppQuery>(
     appQuery,
-    {}
+    {},
+    {
+      fetchKey: refreshKey,
+      fetchPolicy: "store-and-network",
+    }
   );
 
-  const [items, setItems] = useState<Item[]>([]);
-  const [newItemName, setNewItemName] = useState("");
-  //states defined for use when editing data. 
-  const [newCategoryID, setNewCategoryID] = useState("");
-  const [editingItemID, setEditingItemID] = useState<number | null>(null);
+  //function to fetch shopping list data again; to refresh. 
+  const refreshQuery = () => {
+    setRefreshKey((current) => current + 1);
+  };
 
+  const [newItemName, setNewItemName] = useState("");
+  const [newCategoryID, setNewCategoryID] = useState("");
+
+  const [editingItemID, setEditingItemID] = useState<number | null>(null);
   const [editItemName, setEditItemName] = useState("");
   const [editCategoryID, setEditCategoryID] = useState("");
 
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchText, setSearchText] = useState("");
-
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  useEffect(() => {
-    setItems([...data.items]);
-  }, [data.items]);
+  //Mutation hooks
+  const { toggleBought } = useToggleBought({ refreshQuery });
 
-  const {
-    totalItems,
-    boughtItems,
-    remainingItems,
-    sortedItems,
-  } = shoppingFilters(items, selectedCategory, searchText);
-
-  //togglebought function now using commitMutation. 
-  const { toggleBought } = useToggleBought({
-    setItems,
-  });
-
-  const { clearBoughtItems } = useClearBoughtItems({
-    setItems,
-  });
+  const { clearBoughtItems } = useClearBoughtItems({ refreshQuery });
 
   const { handleAddItem } = useAddItem({
-    setItems,
+    refreshQuery,
     newItemName,
     setNewItemName,
     newCategoryID,
     setNewCategoryID,
   });
 
-  const { handleDeleteItem } = useDeleteItem({
-    setItems,
-  });
+  const { handleDeleteItem } = useDeleteItem({ refreshQuery });
 
   const { startEditing, cancelEditing } = createEditItemHandlers({
     setEditingItemID,
@@ -88,20 +73,20 @@ export default function App() {
     setEditCategoryID,
   });
 
+  //item editing helpers
   const { saveEditedItem } = useUpdateItem({
-    setItems,
+    refreshQuery,
     editItemName,
     editCategoryID,
     cancelEditing,
   });
 
   const { uploadTextFile } = useUploadTextFile({
-    setItems,
+    refreshQuery,
     selectedFile,
     categories: data.categories,
   });
 
-  //here the main program is rendered. 
   return (
     <Styled.Container>
       <Styled.Header>
@@ -115,7 +100,7 @@ export default function App() {
           <span>Category</span>
           <span>Actions</span>
         </Styled.ColumnHeader>
-        
+
         <FilterSection
           categories={data.categories}
           selectedCategory={selectedCategory}
@@ -125,29 +110,22 @@ export default function App() {
           clearBoughtItems={clearBoughtItems}
         />
 
-        <StatsBar
-          totalItems={totalItems}
-          boughtItems={boughtItems}
-          remainingItems={remainingItems}
+        <ShoppingList
+          query={data}
+          categories={data.categories}
+          selectedCategory={selectedCategory}
+          searchText={searchText}
+          editingItemID={editingItemID}
+          editItemName={editItemName}
+          setEditItemName={setEditItemName}
+          editCategoryID={editCategoryID}
+          setEditCategoryID={setEditCategoryID}
+          startEditing={startEditing}
+          cancelEditing={cancelEditing}
+          saveEditedItem={saveEditedItem}
+          toggleBought={toggleBought}
+          handleDeleteItem={handleDeleteItem}
         />
-
-        {sortedItems.map((item) => (
-          <ShoppingItem
-            key={item.itemID}
-            item={item}
-            categories={data.categories}
-            editingItemID={editingItemID}
-            editItemName={editItemName}
-            setEditItemName={setEditItemName}
-            editCategoryID={editCategoryID}
-            setEditCategoryID={setEditCategoryID}
-            startEditing={startEditing}
-            cancelEditing={cancelEditing}
-            saveEditedItem={saveEditedItem}
-            toggleBought={toggleBought}
-            handleDeleteItem={handleDeleteItem}
-          />
-        ))}
       </Styled.MainSection>
 
       <AddSection
@@ -158,11 +136,11 @@ export default function App() {
         setNewCategoryID={setNewCategoryID}
         handleAddItem={handleAddItem}
       />
-      
+
       <ImportSection
         setSelectedFile={setSelectedFile}
         uploadTextFile={uploadTextFile}
       />
     </Styled.Container>
-  )
-};
+  );
+}

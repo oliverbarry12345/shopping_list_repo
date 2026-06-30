@@ -1,9 +1,15 @@
+import { useFragment } from "react-relay";
 import * as Styled from "../styles/styledComponents";
-import type { Item, Category } from "../types/shoppingTypes";
+import type { Item } from "../types/shoppingTypes";
+import type { Category_category$key } from "../graphql/fragments/__generated__/Category_category.graphql";
+import { categoryFragment } from "../graphql/fragments/categoryFragment";
+import { shoppingItemFragment } from "../graphql/fragments/shoppingItemFragment";
+import type { ShoppingItem_item$key } from "../graphql/fragments/__generated__/ShoppingItem_item.graphql";
 
 type Props = {
-  item: Item;
-  categories: readonly Category[];
+  item: ShoppingItem_item$key;
+  categories: Category_category$key;
+
   editingItemID: number | null;
   editItemName: string;
   setEditItemName: (name: string) => void;
@@ -32,23 +38,41 @@ export default function ShoppingItem({
   toggleBought,
   handleDeleteItem,
 }: Props) {
+  const itemData = useFragment(shoppingItemFragment, item);
+
+  const categoryData = useFragment(
+    categoryFragment,
+    categories
+  );
+  
+  //item editing still expects item type. editing helpers need to be converted to relay fragment data. 
+  const itemForEditing: Item = {
+    itemID: itemData.itemID,
+    itemName: itemData.itemName,
+    bought: itemData.bought,
+    category: {
+      categoryID: itemData.category.categoryID,
+      categoryName: itemData.category.categoryName,
+    },
+  };
+
   return (
     <Styled.ItemRow>
-      {editingItemID === item.itemID ? (
+      {editingItemID === itemData.itemID ? (
         <>
           <input
             value={editItemName}
             onChange={(e) => setEditItemName(e.target.value)}
           />
 
-          <span>{item.bought ? "Yes" : "No"}</span>
+          <span>{itemData.bought ? "Yes" : "No"}</span>
 
           <select
             value={editCategoryID}
             onChange={(e) => setEditCategoryID(e.target.value)}
           >
             <option value="">Select category</option>
-            {categories.map((category) => (
+            {categoryData.map((category) => (
               <option key={category.categoryID} value={category.categoryID}>
                 {category.categoryName}
               </option>
@@ -56,7 +80,7 @@ export default function ShoppingItem({
           </select>
 
           <Styled.ButtonGroup>
-            <Styled.ActionButton onClick={() => saveEditedItem(item.itemID)}>
+            <Styled.ActionButton onClick={() => saveEditedItem(itemData.itemID)}>
               Save
             </Styled.ActionButton>
             <Styled.ActionButton onClick={cancelEditing}>
@@ -66,24 +90,24 @@ export default function ShoppingItem({
         </>
       ) : (
         <>
-          <span>{item.itemName}</span>
+          <span>{itemData.itemName}</span>
 
-          <span>{item.bought ? "Yes" : "No"}</span>
+          <span>{itemData.bought ? "Yes" : "No"}</span>
 
-          <span>{item.category.categoryName}</span>
+          <span>{itemData.category.categoryName}</span>
 
           <Styled.ButtonGroup>
             <Styled.ActionButton
-              onClick={() => toggleBought(item.itemID, !item.bought)}
+              onClick={() => toggleBought(itemData.itemID, !itemData.bought)}
             >
-              {item.bought ? "Mark Not Bought" : "Mark Bought"}
+              {itemData.bought ? "Mark Not Bought" : "Mark Bought"}
             </Styled.ActionButton>
 
-            <Styled.ActionButton onClick={() => startEditing(item)}>
+            <Styled.ActionButton onClick={() => startEditing(itemForEditing)}>
               Edit
             </Styled.ActionButton>
 
-            <Styled.ActionButton onClick={() => handleDeleteItem(item.itemID)}>
+            <Styled.ActionButton onClick={() => handleDeleteItem(itemData.itemID)}>
               Delete
             </Styled.ActionButton>
           </Styled.ButtonGroup>

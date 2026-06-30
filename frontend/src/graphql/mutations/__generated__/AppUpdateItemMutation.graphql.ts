@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<d6e903479af26749e2835d383491f0d2>>
+ * @generated SignedSource<<14d922779b4c158bf88ba9b171c3ed93>>
  * @lightSyntaxTransform
  */
 
@@ -8,6 +8,7 @@
 // @ts-nocheck
 
 import { ConcreteRequest } from 'relay-runtime';
+import { FragmentRefs } from "relay-runtime";
 export type AppUpdateItemMutation$variables = {
   categoryID: number;
   itemID: number;
@@ -22,6 +23,7 @@ export type AppUpdateItemMutation$data = {
     };
     readonly itemID: number;
     readonly itemName: string;
+    readonly " $fragmentSpreads": FragmentRefs<"ShoppingItem_item">;
   };
 };
 export type AppUpdateItemMutation = {
@@ -47,79 +49,67 @@ v2 = {
 },
 v3 = [
   {
-    "alias": null,
-    "args": [
-      {
-        "kind": "Variable",
-        "name": "categoryID",
-        "variableName": "categoryID"
-      },
-      {
-        "kind": "Variable",
-        "name": "itemID",
-        "variableName": "itemID"
-      },
-      {
-        "kind": "Variable",
-        "name": "itemName",
-        "variableName": "itemName"
-      }
-    ],
-    "concreteType": "item_name",
-    "kind": "LinkedField",
-    "name": "updateItem",
-    "plural": false,
-    "selections": [
-      {
-        "alias": null,
-        "args": null,
-        "kind": "ScalarField",
-        "name": "itemID",
-        "storageKey": null
-      },
-      {
-        "alias": null,
-        "args": null,
-        "kind": "ScalarField",
-        "name": "itemName",
-        "storageKey": null
-      },
-      {
-        "alias": null,
-        "args": null,
-        "kind": "ScalarField",
-        "name": "bought",
-        "storageKey": null
-      },
-      {
-        "alias": null,
-        "args": null,
-        "concreteType": "Category",
-        "kind": "LinkedField",
-        "name": "category",
-        "plural": false,
-        "selections": [
-          {
-            "alias": null,
-            "args": null,
-            "kind": "ScalarField",
-            "name": "categoryID",
-            "storageKey": null
-          },
-          {
-            "alias": null,
-            "args": null,
-            "kind": "ScalarField",
-            "name": "categoryName",
-            "storageKey": null
-          }
-        ],
-        "storageKey": null
-      }
-    ],
-    "storageKey": null
+    "kind": "Variable",
+    "name": "categoryID",
+    "variableName": "categoryID"
+  },
+  {
+    "kind": "Variable",
+    "name": "itemID",
+    "variableName": "itemID"
+  },
+  {
+    "kind": "Variable",
+    "name": "itemName",
+    "variableName": "itemName"
   }
-];
+],
+v4 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "itemID",
+  "storageKey": null
+},
+v5 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "itemName",
+  "storageKey": null
+},
+v6 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "bought",
+  "storageKey": null
+},
+v7 = {
+  "alias": null,
+  "args": null,
+  "concreteType": "Category",
+  "kind": "LinkedField",
+  "name": "category",
+  "plural": false,
+  "selections": [
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "categoryID",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "categoryName",
+      "storageKey": null
+    }
+  ],
+  "storageKey": null
+};
 return {
   "fragment": {
     "argumentDefinitions": [
@@ -130,7 +120,28 @@ return {
     "kind": "Fragment",
     "metadata": null,
     "name": "AppUpdateItemMutation",
-    "selections": (v3/*:: as any*/),
+    "selections": [
+      {
+        "alias": null,
+        "args": (v3/*:: as any*/),
+        "concreteType": "item_name",
+        "kind": "LinkedField",
+        "name": "updateItem",
+        "plural": false,
+        "selections": [
+          (v4/*:: as any*/),
+          (v5/*:: as any*/),
+          (v6/*:: as any*/),
+          (v7/*:: as any*/),
+          {
+            "args": null,
+            "kind": "FragmentSpread",
+            "name": "ShoppingItem_item"
+          }
+        ],
+        "storageKey": null
+      }
+    ],
     "type": "Mutation",
     "abstractKey": null
   },
@@ -143,19 +154,35 @@ return {
     ],
     "kind": "Operation",
     "name": "AppUpdateItemMutation",
-    "selections": (v3/*:: as any*/)
+    "selections": [
+      {
+        "alias": null,
+        "args": (v3/*:: as any*/),
+        "concreteType": "item_name",
+        "kind": "LinkedField",
+        "name": "updateItem",
+        "plural": false,
+        "selections": [
+          (v4/*:: as any*/),
+          (v5/*:: as any*/),
+          (v6/*:: as any*/),
+          (v7/*:: as any*/)
+        ],
+        "storageKey": null
+      }
+    ]
   },
   "params": {
-    "cacheID": "8a7883b8487b7e47e46dd2bd536a4704",
+    "cacheID": "8954705eadf4d345e623e63ad7cc1c4b",
     "id": null,
     "metadata": {},
     "name": "AppUpdateItemMutation",
     "operationKind": "mutation",
-    "text": "mutation AppUpdateItemMutation(\n  $itemID: Int!\n  $itemName: String!\n  $categoryID: Int!\n) {\n  updateItem(itemID: $itemID, itemName: $itemName, categoryID: $categoryID) {\n    itemID\n    itemName\n    bought\n    category {\n      categoryID\n      categoryName\n    }\n  }\n}\n"
+    "text": "mutation AppUpdateItemMutation(\n  $itemID: Int!\n  $itemName: String!\n  $categoryID: Int!\n) {\n  updateItem(itemID: $itemID, itemName: $itemName, categoryID: $categoryID) {\n    itemID\n    itemName\n    bought\n    category {\n      categoryID\n      categoryName\n    }\n    ...ShoppingItem_item\n  }\n}\n\nfragment ShoppingItem_item on item_name {\n  itemID\n  itemName\n  bought\n  category {\n    categoryID\n    categoryName\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "53e126ab4621122f6280406981ff7257";
+(node as any).hash = "d055dcdf57b859c6cb36f1aa5d6b08e0";
 
 export default node;

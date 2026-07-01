@@ -1,7 +1,3 @@
-import type { Item } from "../types/shoppingTypes";
-
-//This file needs converting to accept relay fragments and not just Item type. this is old. 
-
 type EditItemArgs = {
   setEditingItemID: React.Dispatch<React.SetStateAction<number | null>>;
   setEditItemName: React.Dispatch<React.SetStateAction<string>>;
@@ -13,10 +9,15 @@ export function createEditItemHandlers({
   setEditItemName,
   setEditCategoryID,
 }: EditItemArgs) {
-  const startEditing = (item: Item) => {
-    setEditingItemID(item.itemID);
-    setEditItemName(item.itemName);
-    setEditCategoryID(String(item.category.categoryID));
+  const startEditing = (
+    itemID: number,
+    itemName: string,
+    categoryID: number
+
+  ) => {
+    setEditingItemID(itemID);
+    setEditItemName(itemName);
+    setEditCategoryID(String(categoryID));
   };
 
   const cancelEditing = () => {

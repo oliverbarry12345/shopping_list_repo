@@ -1,6 +1,5 @@
 import { useFragment } from "react-relay";
 import * as Styled from "../styles/styledComponents";
-import type { Item } from "../types/shoppingTypes";
 import type { Category_category$key } from "../graphql/fragments/__generated__/Category_category.graphql";
 import { categoryFragment } from "../graphql/fragments/categoryFragment";
 import { shoppingItemFragment } from "../graphql/fragments/shoppingItemFragment";
@@ -16,7 +15,12 @@ type Props = {
   editCategoryID: string;
   setEditCategoryID: (id: string) => void;
 
-  startEditing: (item: Item) => void;
+  startEditing: (
+    itemID: number,
+    itemName: string,
+    categoryID: number
+  ) => void;
+
   cancelEditing: () => void;
   saveEditedItem: (itemID: number) => void;
 
@@ -45,17 +49,6 @@ export default function ShoppingItem({
     categories
   );
   
-  //item editing still expects item type. editing helpers need to be converted to relay fragment data. 
-  const itemForEditing: Item = {
-    itemID: itemData.itemID,
-    itemName: itemData.itemName,
-    bought: itemData.bought,
-    category: {
-      categoryID: itemData.category.categoryID,
-      categoryName: itemData.category.categoryName,
-    },
-  };
-
   return (
     <Styled.ItemRow>
       {editingItemID === itemData.itemID ? (
@@ -102,8 +95,16 @@ export default function ShoppingItem({
             >
               {itemData.bought ? "Mark Not Bought" : "Mark Bought"}
             </Styled.ActionButton>
-
-            <Styled.ActionButton onClick={() => startEditing(itemForEditing)}>
+            
+            <Styled.ActionButton
+              onClick={() =>
+                startEditing(
+                  itemData.itemID,
+                  itemData.itemName,
+                  itemData.category.categoryID
+                )
+              }
+            >
               Edit
             </Styled.ActionButton>
 

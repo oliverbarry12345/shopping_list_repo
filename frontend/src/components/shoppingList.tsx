@@ -2,7 +2,6 @@ import { useFragment } from "react-relay";
 import ShoppingItem from "./shoppingItem";
 import StatsBar from "./statsBar";
 
-import type { Item } from "../types/shoppingTypes";
 import type { Category_category$key } from "../graphql/fragments/__generated__/Category_category.graphql";
 import type { ShoppingList_query$key } from "../graphql/fragments/__generated__/ShoppingList_query.graphql";
 
@@ -23,7 +22,12 @@ type Props = {
   editCategoryID: string;
   setEditCategoryID: (id: string) => void;
 
-  startEditing: (item: Item) => void;
+  startEditing: (
+    itemID: number,
+    itemName: string,
+    categoryID: number
+  ) => void;
+
   cancelEditing: () => void;
   saveEditedItem: (itemID: number) => void;
 
